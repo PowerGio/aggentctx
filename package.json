@@ -1,6 +1,6 @@
 {
   "name": "aggentctx",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Generate and maintain AI agent context files for your codebase",
   "type": "module",
   "bin": {
