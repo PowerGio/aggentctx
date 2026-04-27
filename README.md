@@ -1,62 +1,68 @@
 # aggentctx
 
-> Generate and maintain AI agent context files for your codebase — so agents never start from zero.
+> Keep your AI agent in the loop — automatically.
 
-AI coding agents lose context between sessions. They don't know how your features work, where credentials go, or what changed last week. `aggentctx` fixes that by generating structured context files and keeping them up to date automatically.
+You know that feeling when you open a new Claude Code session and have to re-explain your entire project from scratch? That's the problem aggentctx solves.
 
-## What it does
+One command generates context files (`AGENTS.md`, `CLAUDE.md`, `DESIGN.md`) tailored to your stack. A git hook keeps them up to date after every commit — no manual work, no forgotten changes.
 
-- **`aggentctx init`** — detects your stack and generates `AGENTS.md`, `CLAUDE.md`, `DESIGN.md`
-- **`aggentctx feature add/update`** — documents feature behaviors with history, so agents know what each feature does and how it evolved
-- **`aggentctx deploy add/scan`** — stores deploy commands with `$ENV_VAR` placeholders — no more forgotten credentials
-- **`aggentctx hook install`** — installs a git post-commit hook that writes `.agentctx/pending-review.md` after every commit, so Claude Code automatically validates behavioral changes
-
-## Quick start
+## Get started in 10 seconds
 
 ```bash
 npx aggentctx init
 ```
 
-That's it. Run it in any project directory. aggentctx detects your stack, generates the context files, and writes a bootstrap signal so Claude Code documents your existing features on the next prompt.
+That's it. aggentctx scans your project, detects your stack, and writes the context files. The next time you open Claude Code, it already knows how your project works.
 
 ## Installation
 
 ```bash
-# Global
+# Global — use it anywhere
 npm install -g aggentctx
 
-# Or use directly with npx
+# Or just run it directly
 npx aggentctx init
 ```
+
+## What you get
+
+Running `aggentctx init` generates three files:
+
+- **`AGENTS.md`** — stack, architecture, directory structure, and workflow instructions for any AI agent
+- **`CLAUDE.md`** — Claude Code-specific rules, commands, and the automatic review instructions
+- **`DESIGN.md`** — API conventions and design patterns for your stack
+
+Plus a bootstrap signal (`.agentctx/pending-bootstrap.md`) that tells Claude Code to scan your existing features and document them on the next prompt — so even old projects start with full context.
 
 ## Commands
 
 ### `aggentctx init [dir]`
 
-Analyzes your project and generates context files.
+Detects your stack and writes the context files. Safe to run on existing projects — it merges into your current `CLAUDE.md` without overwriting your content.
 
 ```bash
-aggentctx init                  # Current directory
-aggentctx init ./my-project     # Specific directory
-aggentctx init --dry-run        # Preview without writing
-aggentctx init --force          # Overwrite existing files
-aggentctx init --no-claude      # Skip CLAUDE.md
+aggentctx init                  # current directory
+aggentctx init ./my-project     # specific directory
+aggentctx init --dry-run        # preview what would be written
+aggentctx init --force          # overwrite everything
+aggentctx init --no-claude      # skip CLAUDE.md
 ```
 
-On the first run, it also writes `.agentctx/pending-bootstrap.md` — a signal that tells Claude Code to scan the codebase and auto-document existing features and deploy commands.
+---
 
 ### `aggentctx feature`
 
-Document and track feature behaviors so agents never break existing flows.
+Document how your features actually work — so agents don't accidentally break them.
 
 ```bash
-aggentctx feature add           # Document a new feature (interactive)
-aggentctx feature update [id]   # Update a feature — preserves previous behavior in history
-aggentctx feature list          # List all documented features
-aggentctx feature check <files> # Check if changed files affect documented features
+aggentctx feature add           # document a new feature (interactive)
+aggentctx feature update [id]   # update a feature, old behavior moves to history
+aggentctx feature list          # see everything documented so far
+aggentctx feature check <files> # check if changed files touch any documented feature
 ```
 
-**Example FEATURES.md entry:**
+Example entry in `FEATURES.md`:
+
 ```markdown
 ## upload-button
 
@@ -74,35 +80,62 @@ aggentctx feature check <files> # Check if changed files affect documented featu
 **Returns:** `{ id: string, url: string }`
 ```
 
+---
+
 ### `aggentctx deploy`
 
-Store deployment commands with environment variable references.
+Store your deploy commands with `$ENV_VAR` placeholders — no more digging through Slack to find that staging command with the credentials.
 
 ```bash
-aggentctx deploy add            # Add a deploy environment (interactive)
-aggentctx deploy show           # Show current DEPLOY.md
-aggentctx deploy scan           # AI-scan project files to auto-detect deploy commands
+aggentctx deploy add            # add a deploy environment (interactive)
+aggentctx deploy show           # show current DEPLOY.md
+aggentctx deploy scan           # auto-detect deploy commands from your project files
                                 # (requires ANTHROPIC_API_KEY)
 ```
 
+---
+
 ### `aggentctx hook`
 
-Manage git hooks for automatic context updates.
+Install a git hook that writes a pending review file after every commit. Claude Code picks it up automatically on your next prompt and updates `FEATURES.md` if anything changed.
 
 ```bash
-aggentctx hook install          # Install post-commit hook
-aggentctx hook uninstall        # Remove the hook
+aggentctx hook install          # set it up
+aggentctx hook uninstall        # remove it
 ```
 
-After every `git commit`, the hook writes `.agentctx/pending-review.md` with the diff. Claude Code reads `CLAUDE.md`, finds the review instructions, and automatically updates `FEATURES.md` if behavior changed.
+No API keys needed — Claude Code is the AI doing the review.
+
+---
 
 ### `aggentctx validate [dir]`
 
-Validate context files for structure and completeness.
+Check that your context files are complete and well-structured.
 
 ```bash
 aggentctx validate
 aggentctx validate ./my-project
+```
+
+## How the automatic loop works
+
+Once the hook is installed, everything happens on its own:
+
+```
+you run: git commit
+              ↓
+    hook writes .agentctx/pending-review.md
+    (commit message + changed files + diff)
+              ↓
+    you open Claude Code and type anything
+              ↓
+    Claude reads CLAUDE.md → sees the review instructions
+              ↓
+    analyzes the diff → did any feature behavior change?
+              ↓
+    updates FEATURES.md if needed (old behavior goes to history)
+              ↓
+    deletes pending-review.md → done
 ```
 
 ## Supported stacks
@@ -117,41 +150,19 @@ aggentctx validate ./my-project
 | Laravel | ✅ | ✅ | base |
 | + 14 detected | base | base | base |
 
-Detection covers: Astro, Remix, Nuxt, Svelte, React, Vite, Fastify, Hono, Flask, Symfony, Rails, Go (Fiber/Gin/Echo), Expo, React Native.
-
-## How the automatic loop works
-
-```
-git commit
-    ↓
-post-commit hook runs
-    ↓
-.agentctx/pending-review.md written (commit message + changed files + diff)
-    ↓
-Next prompt in Claude Code
-    ↓
-Claude reads CLAUDE.md → sees review instructions
-    ↓
-Analyzes diff → detects if feature behavior changed
-    ↓
-Updates FEATURES.md (with history) + DEPLOY.md if needed
-    ↓
-Deletes pending-review.md
-```
-
-No API keys required for the automatic loop — Claude Code is the AI.
+Also detects: Astro, Remix, Nuxt, Svelte, React, Vite, Fastify, Hono, Flask, Symfony, Rails, Go (Fiber/Gin/Echo), Expo, React Native.
 
 ## Programmatic API
 
 ```typescript
 import { StackDetector, ContextGenerator, registerStack } from 'aggentctx';
 
-// Detect stack
+// detect the stack
 const detector = new StackDetector('./my-project');
 const detection = await detector.detect();
 console.log(detection.primaryStack.name); // "Next.js"
 
-// Register a custom stack
+// register a custom stack with your own templates
 registerStack('my-stack', {
   'AGENTS.md': '# Custom AGENTS.md template',
   'CLAUDE.md': '# Custom CLAUDE.md template',
@@ -160,9 +171,11 @@ registerStack('my-stack', {
 
 ## Security
 
-- **Path traversal protection** — `PathGuard` prevents reading outside the project root
-- **Secret detection** — `SecretScanner` detects 15+ patterns (AWS keys, OpenAI, Anthropic, JWTs, etc.) and blocks them before writing
-- **Sensitive file filtering** — `SensitiveFileFilter` prevents accidental inclusion of `.env`, private keys, credentials files
+aggentctx never reads or writes credentials. Before writing any file it runs three checks:
+
+- **Path traversal protection** — stays inside the project root, always
+- **Secret detection** — scans for 15+ patterns (AWS keys, OpenAI, Anthropic, JWTs, etc.) and blocks the file if found
+- **Sensitive file filtering** — ignores `.env`, private keys, and credentials files entirely
 
 ## Requirements
 
