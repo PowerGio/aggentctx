@@ -31,7 +31,7 @@ Do the following **before any other task**:
 2. Scan \`app/routers/\` and \`app/api/\` for route definitions. For each router,
    document the user-facing flow and response shape in \`FEATURES.md\`.
 3. Scan \`Makefile\`, \`pyproject.toml\` scripts, and CI files for deploy commands.
-   Append each to \`DEPLOY.md\`, replacing credentials with \`\$ENV_VAR\` placeholders.
+   Append each to \`DEPLOY.md\`, replacing credentials with \`$ENV_VAR\` placeholders.
 4. Delete \`.agentctx/pending-bootstrap.md\` once bootstrap is complete.
 
 ## agentctx — Commit Validation (automatic)

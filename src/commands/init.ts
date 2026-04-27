@@ -6,7 +6,6 @@ import { StackDetector } from '../core/detector/index.js';
 import { ProjectAnalyzer } from '../core/analyzer/index.js';
 import { ContextGenerator } from '../core/generator/index.js';
 import { FileWriter } from '../core/writer/index.js';
-import { SensitiveFileFilter } from '../security/sensitive-files.js';
 import { DEFAULT_CONFIG } from '../config/defaults.js';
 
 export interface InitOptions {
@@ -41,11 +40,18 @@ export class InitCommand {
     const detector = new StackDetector(targetDir);
     const detection = await detector.detect();
 
-    this.reporter.info(`Stack: ${detection.primaryStack.name} (${detection.primaryStack.confidence})`);
-    this.reporter.info(`Language: ${detection.language}`);
-    this.reporter.info(`Package manager: ${detection.packageManager}`);
-    if (detection.additionalStacks.length > 0) {
-      this.reporter.info(`Also detected: ${detection.additionalStacks.map((s) => s.name).join(', ')}`);
+    if (detection.isMonorepo && detection.workspaces.length > 0) {
+      this.reporter.info(`Monorepo detected — ${detection.workspaces.length} workspaces`);
+      for (const ws of detection.workspaces) {
+        this.reporter.info(`  ${ws.path}/ — ${ws.stackName} (${ws.language})`);
+      }
+    } else {
+      this.reporter.info(`Stack: ${detection.primaryStack.name} (${detection.primaryStack.confidence})`);
+      this.reporter.info(`Language: ${detection.language}`);
+      this.reporter.info(`Package manager: ${detection.packageManager}`);
+      if (detection.additionalStacks.length > 0) {
+        this.reporter.info(`Also detected: ${detection.additionalStacks.map((s) => s.name).join(', ')}`);
+      }
     }
 
     this.reporter.section('Analyzing project...');

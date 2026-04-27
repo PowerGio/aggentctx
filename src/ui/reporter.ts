@@ -58,6 +58,7 @@ export class ConsoleReporter implements Reporter {
   }
 
   private print(message: string): void {
+    // eslint-disable-next-line no-control-regex
     const output = this.noColor ? message.replace(/\x1b\[[0-9;]*m/g, '') : message;
     process.stdout.write(output + '\n');
   }

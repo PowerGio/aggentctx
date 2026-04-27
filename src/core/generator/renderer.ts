@@ -1,7 +1,5 @@
 import type { TemplateVars } from '../../types/index.js';
 
-type Resolver = (vars: TemplateVars) => string;
-
 export class TemplateRenderer {
   render(template: string, vars: TemplateVars): string {
     let result = template;
@@ -65,10 +63,7 @@ export class TemplateRenderer {
         return items
           .map((item: unknown) =>
             content.replace(/\{\{this\.([^}]+)\}\}/g, (__, prop: string) => {
-              const val =
-                typeof item === 'object' && item !== null
-                  ? (item as Record<string, unknown>)[prop]
-                  : undefined;
+              const val = this.resolvePath(prop, item);
               return val !== undefined ? String(val) : '';
             }),
           )

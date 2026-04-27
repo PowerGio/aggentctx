@@ -33,7 +33,7 @@ Do the following **before any other task**:
 2. Scan \`src/\` for modules (*.module.ts) and their controllers. For each controller,
    document the user-facing endpoints as features in \`FEATURES.md\`.
 3. Scan \`package.json\` scripts, Dockerfile, and CI files for deploy commands.
-   Append each to \`DEPLOY.md\`, replacing credentials with \`\$ENV_VAR\` placeholders.
+   Append each to \`DEPLOY.md\`, replacing credentials with \`$ENV_VAR\` placeholders.
 4. Delete \`.agentctx/pending-bootstrap.md\` once bootstrap is complete.
 
 ## agentctx — Commit Validation (automatic)

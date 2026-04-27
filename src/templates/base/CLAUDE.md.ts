@@ -29,7 +29,7 @@ Do the following **before any other task**:
    Document at least the flow (steps the user follows) and what it returns/shows.
 4. Scan \`Makefile\`, \`package.json\` scripts, CI files, and shell scripts for deploy commands.
    For each one found, append it to \`DEPLOY.md\` using \`agentctx deploy add\` or directly.
-   Replace any hardcoded credentials with \`\$ENV_VAR_NAME\` placeholders.
+   Replace any hardcoded credentials with \`$ENV_VAR_NAME\` placeholders.
 5. Delete \`.agentctx/pending-bootstrap.md\` once bootstrap is complete.
 
 ## agentctx — Commit Validation (automatic)

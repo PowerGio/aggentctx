@@ -6,6 +6,7 @@ export type StackId =
   | 'rails'
   | 'go-fiber' | 'go-gin' | 'go-echo'
   | 'expo' | 'react-native'
+  | 'monorepo'
   | 'unknown';
 
 export type ConfidenceLevel = 'definitive' | 'high' | 'medium' | 'low';
@@ -23,12 +24,22 @@ export interface StackInfo {
   readonly role: 'frontend' | 'backend' | 'fullstack' | 'mobile';
 }
 
+export interface WorkspaceInfo {
+  readonly path: string;
+  readonly name: string;
+  readonly stackName: string;
+  readonly stackId: StackId;
+  readonly language: Language;
+  readonly packageManager: PackageManager;
+}
+
 export interface DetectionResult {
   readonly primaryStack: StackInfo;
   readonly additionalStacks: readonly StackInfo[];
   readonly isMonorepo: boolean;
   readonly packageManager: PackageManager;
   readonly language: Language;
+  readonly workspaces: readonly WorkspaceInfo[];
 }
 
 export interface Convention {
@@ -75,6 +86,7 @@ export interface TemplateVars {
     readonly isMonorepo: boolean;
     readonly packageManager: PackageManager;
     readonly language: Language;
+    readonly workspaces: readonly WorkspaceInfo[];
   };
   readonly conventions: {
     readonly linter?: string;

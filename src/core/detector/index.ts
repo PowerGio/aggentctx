@@ -1,6 +1,7 @@
 import path from 'node:path';
 import fs from 'node:fs/promises';
-import { FINGERPRINTS, type Fingerprint } from './fingerprints.js';
+import { FINGERPRINTS } from './fingerprints.js';
+import { MonorepoDetector } from './monorepo.js';
 import type {
   DetectionResult,
   StackId,
@@ -46,12 +47,17 @@ export class StackDetector {
     const packageManager = this.detectPackageManager(rootFiles, pkgJson);
     const language = this.detectLanguage(rootFiles, pkgJson, requirementsTxt, goMod);
 
+    const workspaces = isMonorepo
+      ? await new MonorepoDetector(this.projectRoot).detectWorkspaces()
+      : [];
+
     return {
       primaryStack,
       additionalStacks,
       isMonorepo,
       packageManager,
       language,
+      workspaces,
     };
   }
 
@@ -76,7 +82,7 @@ export class StackDetector {
   private async readRequirementsTxt(): Promise<string[]> {
     try {
       const content = await fs.readFile(path.join(this.projectRoot, 'requirements.txt'), 'utf-8');
-      return content.split('\n').map((l) => l.trim().split(/[>=<!\[]/)[0]?.trim() ?? '').filter(Boolean);
+      return content.split('\n').map((l) => l.trim().split(/[>=<![\]]/)[0]?.trim() ?? '').filter(Boolean);
     } catch {
       return [];
     }
@@ -280,7 +286,34 @@ export class StackDetector {
 
   private async detectMonorepo(rootFiles: string[]): Promise<boolean> {
     const monoRepoIndicators = ['turbo.json', 'nx.json', 'pnpm-workspace.yaml', 'lerna.json'];
-    return monoRepoIndicators.some((f) => rootFiles.includes(f));
+    if (monoRepoIndicators.some((f) => rootFiles.includes(f))) return true;
+
+    // Check package.json workspaces field
+    try {
+      const raw = await fs.readFile(path.join(this.projectRoot, 'package.json'), 'utf-8');
+      const pkg = JSON.parse(raw) as { workspaces?: unknown };
+      if (pkg.workspaces) return true;
+    } catch { /* no package.json */ }
+
+    // Check if multiple subdirectories have their own manifests (manual monorepo)
+    const manifestFiles = ['package.json', 'requirements.txt', 'pyproject.toml', 'go.mod', 'composer.json'];
+    let manifestDirCount = 0;
+    for (const entry of rootFiles) {
+      try {
+        const stat = await fs.stat(path.join(this.projectRoot, entry));
+        if (!stat.isDirectory()) continue;
+        for (const manifest of manifestFiles) {
+          try {
+            await fs.access(path.join(this.projectRoot, entry, manifest));
+            manifestDirCount++;
+            break;
+          } catch { /* continue */ }
+        }
+        if (manifestDirCount >= 2) return true;
+      } catch { /* continue */ }
+    }
+
+    return false;
   }
 
   private detectPackageManager(

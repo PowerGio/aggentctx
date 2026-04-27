@@ -1,4 +1,5 @@
 export { StackDetector } from './core/detector/index.js';
+export { MonorepoDetector } from './core/detector/monorepo.js';
 export { registerStack } from './templates/registry.js';
 export { ProjectAnalyzer } from './core/analyzer/index.js';
 export { ContextGenerator } from './core/generator/index.js';

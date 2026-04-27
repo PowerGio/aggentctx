@@ -64,7 +64,6 @@ export class ContextValidator {
       });
     }
 
-    const totalIssues = errors.length + warnings.length;
     const score = Math.max(0, 100 - errors.length * 20 - warnings.length * 5);
 
     return {

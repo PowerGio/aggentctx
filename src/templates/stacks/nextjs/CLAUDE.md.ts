@@ -32,7 +32,7 @@ Do the following **before any other task**:
 3. For each user-facing feature found, append an entry to \`FEATURES.md\`.
    Document the flow (steps the user follows) and what the feature returns/shows.
 4. Scan \`package.json\` scripts and any CI/CD files (\`.github/workflows/\`, \`Dockerfile\`)
-   for deploy commands. Append each to \`DEPLOY.md\`, replacing credentials with \`\$ENV_VAR\` placeholders.
+   for deploy commands. Append each to \`DEPLOY.md\`, replacing credentials with \`$ENV_VAR\` placeholders.
 5. Delete \`.agentctx/pending-bootstrap.md\` once bootstrap is complete.
 
 ## agentctx — Commit Validation (automatic)
