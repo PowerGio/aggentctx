@@ -1,0 +1,11 @@
+export { StackDetector } from './core/detector/index.js';
+export { registerStack } from './templates/registry.js';
+export { ProjectAnalyzer } from './core/analyzer/index.js';
+export { ContextGenerator } from './core/generator/index.js';
+export { ContextValidator } from './core/validator/index.js';
+export { FileWriter } from './core/writer/index.js';
+export { PathGuard } from './security/path-guard.js';
+export { SecretScanner } from './security/secret-scanner.js';
+export { SensitiveFileFilter } from './security/sensitive-files.js';
+export { DEFAULT_CONFIG } from './config/defaults.js';
+export type * from './types/index.js';

@@ -1,0 +1,55 @@
+export const template = `# CLAUDE.md — {{project.name}}
+
+## Project
+
+{{project.name}} — {{stack.primary.name}}{{#if stack.primary.version}} {{stack.primary.version}}{{/if}} / {{stack.language}} / {{stack.packageManager}}
+
+## Commands
+
+\`\`\`bash
+{{stack.packageManager}} run dev      # dev server
+{{stack.packageManager}} run build    # production build
+{{stack.packageManager}} run lint     # lint
+{{stack.packageManager}} run test     # tests
+\`\`\`
+
+## Rules
+
+- TypeScript strict mode — no \`any\`, no \`@ts-ignore\` without explanation
+- All environment variables via \`process.env\` — never hardcode
+- Run lint + tests before marking a task complete
+- Keep components small and composable
+- Prefer Server Components by default in App Router; use \`'use client'\` only when necessary
+
+## agentctx — First-Run Bootstrap
+
+If \`.agentctx/pending-bootstrap.md\` exists, this is the **first time agentctx runs on this project**.
+Do the following **before any other task**:
+
+1. Read \`.agentctx/pending-bootstrap.md\` for the project summary.
+2. Scan \`app/\` and \`pages/\` for routes, \`src/components/\` for major UI components,
+   and \`src/api/\` or \`app/api/\` for API routes.
+3. For each user-facing feature found, append an entry to \`FEATURES.md\`.
+   Document the flow (steps the user follows) and what the feature returns/shows.
+4. Scan \`package.json\` scripts and any CI/CD files (\`.github/workflows/\`, \`Dockerfile\`)
+   for deploy commands. Append each to \`DEPLOY.md\`, replacing credentials with \`\$ENV_VAR\` placeholders.
+5. Delete \`.agentctx/pending-bootstrap.md\` once bootstrap is complete.
+
+## agentctx — Commit Validation (automatic)
+
+After every \`git commit\`, check if \`.agentctx/pending-review.md\` exists.
+If it does, read it and do the following **before any other task**:
+
+1. Read \`FEATURES.md\` to understand the currently documented behaviors.
+2. Analyze the diff in \`.agentctx/pending-review.md\` and determine if any feature's
+   user-facing behavior changed (flow, return value, visible side-effects).
+3. For each affected feature:
+   - If behavior changed: edit \`FEATURES.md\` directly to reflect the new flow,
+     moving the previous behavior to the history section.
+   - If no behavioral change: do nothing for that feature.
+4. If \`DEPLOY.md\` exists, check whether any new deploy command or required env variable
+   appeared in the diff. If so, update \`DEPLOY.md\` accordingly.
+5. Delete \`.agentctx/pending-review.md\` once the review is complete.
+
+> This file is managed by agentctx. Do not remove this section.
+`;

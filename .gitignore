@@ -1,0 +1,7 @@
+node_modules/
+dist/
+coverage/
+.env
+*.local
+.agentctx/
+nxt-ai-development/

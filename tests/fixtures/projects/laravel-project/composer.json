@@ -1,0 +1,12 @@
+{
+  "name": "myorg/my-laravel-app",
+  "require": {
+    "php": "^8.2",
+    "laravel/framework": "^11.0",
+    "laravel/sanctum": "^4.0"
+  },
+  "require-dev": {
+    "pestphp/pest": "^3.0",
+    "fakerphp/faker": "^1.23"
+  }
+}
