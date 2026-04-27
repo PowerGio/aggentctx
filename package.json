@@ -4,7 +4,7 @@
   "description": "Generate and maintain AI agent context files for your codebase",
   "type": "module",
   "bin": {
-    "aggentctx": "./dist/bin/agentctx.js"
+    "aggentctx": "dist/bin/agentctx.js"
   },
   "exports": {
     ".": {
