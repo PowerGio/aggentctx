@@ -25,6 +25,14 @@ export class StackDetector {
 
   async detect(): Promise<DetectionResult> {
     const rootFiles = await this.listRootFiles();
+
+    // Detect monorepo first — before scoring — so primaryStack can fall back to 'monorepo'
+    // when there are no root manifests but workspaces exist (e.g. atlas-style repos)
+    const isMonorepo = await this.detectMonorepo(rootFiles);
+    const workspaces = isMonorepo
+      ? await new MonorepoDetector(this.projectRoot).detectWorkspaces()
+      : [];
+
     const pkgJson = await this.readPackageJson();
     const requirementsTxt = await this.readRequirementsTxt();
     const composerJson = await this.readComposerJson();
@@ -36,20 +44,17 @@ export class StackDetector {
     const primary = sorted[0];
     const primaryStack = primary
       ? this.buildStackInfo(primary, pkgJson, goMod)
-      : this.unknownStack();
+      : isMonorepo && workspaces.length > 0
+        ? this.monorepoStack(workspaces.length)
+        : this.unknownStack();
 
     const additionalStacks = sorted
       .slice(1)
       .filter((s) => s.score >= 5)
       .map((s) => this.buildStackInfo(s, pkgJson, goMod));
 
-    const isMonorepo = await this.detectMonorepo(rootFiles);
     const packageManager = this.detectPackageManager(rootFiles, pkgJson);
     const language = this.detectLanguage(rootFiles, pkgJson, requirementsTxt, goMod);
-
-    const workspaces = isMonorepo
-      ? await new MonorepoDetector(this.projectRoot).detectWorkspaces()
-      : [];
 
     return {
       primaryStack,
@@ -264,6 +269,17 @@ export class StackDetector {
     };
     const pkgName = PKG_NAME[stackId];
     return pkgName ? (allDeps[pkgName] ?? undefined) : undefined;
+  }
+
+  private monorepoStack(workspaceCount: number): StackInfo {
+    return {
+      id: 'monorepo',
+      name: `Monorepo — ${workspaceCount} workspace${workspaceCount !== 1 ? 's' : ''}`,
+      ecosystem: 'node',
+      role: 'fullstack',
+      confidence: 'high',
+      indicators: ['multiple-manifest-dirs'],
+    };
   }
 
   private unknownStack(): StackInfo {
