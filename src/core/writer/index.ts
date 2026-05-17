@@ -5,6 +5,7 @@ import type { OutputFile, AgentctxConfig } from '../../types/index.js';
 export interface WriteResult {
   readonly written: readonly string[];
   readonly skipped: readonly string[];
+  readonly up_to_date: readonly string[];
   readonly backed_up: readonly string[];
 }
 
@@ -20,6 +21,7 @@ export class FileWriter {
   ): Promise<WriteResult> {
     const written: string[] = [];
     const skipped: string[] = [];
+    const up_to_date: string[] = [];
     const backed_up: string[] = [];
 
     for (const file of files) {
@@ -34,7 +36,24 @@ export class FileWriter {
             await fs.writeFile(file.outputPath, merged, 'utf-8');
             written.push(file.filename);
           } else {
-            skipped.push(file.filename);
+            up_to_date.push(file.filename); // agentctx sections are current, nothing changed
+          }
+        } else {
+          written.push(file.filename);
+        }
+        continue;
+      }
+
+      // AGENTS.md uses H2-adaptive merge: only appends sections missing from the existing file.
+      // Never overwrites user content, even with --force. The user's own sections are always preserved.
+      if (file.filename === 'AGENTS.md' && exists) {
+        if (!dryRun) {
+          const merged = await this.mergeAgentsAdaptive(file.outputPath, file.content);
+          if (merged !== null) {
+            await fs.writeFile(file.outputPath, merged, 'utf-8');
+            written.push(file.filename);
+          } else {
+            up_to_date.push(file.filename); // all template sections already present
           }
         } else {
           written.push(file.filename);
@@ -76,7 +95,7 @@ export class FileWriter {
       }
     }
 
-    return { written, skipped, backed_up };
+    return { written, skipped, up_to_date, backed_up };
   }
 
   private exists(filePath: string): Promise<boolean> {
@@ -109,6 +128,63 @@ export class FileWriter {
 
     // No agentctx sections yet — append them while keeping all existing content.
     return existing.trimEnd() + '\n\n' + newSections + '\n';
+  }
+
+  /**
+   * H2-adaptive merge for AGENTS.md.
+   * Reads the existing file, extracts which H2 sections are already present,
+   * and only appends the sections from the template that are missing.
+   * This preserves every section the user already has — no matter how custom or different.
+   * Returns null if the existing file already has all the sections from the template.
+   */
+  private async mergeAgentsAdaptive(filePath: string, newContent: string): Promise<string | null> {
+    const existing = await fs.readFile(filePath, 'utf-8');
+
+    // Extract H2 headings from the existing file (case-insensitive)
+    const existingH2s = new Set(
+      [...existing.matchAll(/^## (.+)$/gm)].map((m) => (m[1] ?? '').trim().toLowerCase()),
+    );
+
+    // Split the template content into H2 sections, find what's missing
+    const newSections = this.splitIntoH2Sections(newContent);
+    const missingSections = newSections.filter(
+      (s) => !existingH2s.has(s.heading.toLowerCase()),
+    );
+
+    if (missingSections.length === 0) return null; // user already has everything
+
+    const toAppend = missingSections.map((s) => s.content).join('\n\n');
+    return existing.trimEnd() + '\n\n' + toAppend + '\n';
+  }
+
+  /**
+   * Splits markdown content into H2 sections, returning the heading text and
+   * the full raw content of each section (heading line + body).
+   * Content before the first H2 (title, preamble) is excluded.
+   */
+  private splitIntoH2Sections(content: string): Array<{ heading: string; content: string }> {
+    const sections: Array<{ heading: string; content: string }> = [];
+    const h2Regex = /^(## .+)$/gm;
+    let prevMatch: RegExpExecArray | null = null;
+
+    let match: RegExpExecArray | null;
+    while ((match = h2Regex.exec(content)) !== null) {
+      if (prevMatch !== null) {
+        const sectionContent = content.substring(prevMatch.index, match.index).trimEnd();
+        const heading = (prevMatch[1] ?? '').replace(/^## /, '');
+        sections.push({ heading, content: sectionContent });
+      }
+      prevMatch = match;
+    }
+
+    // Last section
+    if (prevMatch !== null) {
+      const sectionContent = content.substring(prevMatch.index).trimEnd();
+      const heading = (prevMatch[1] ?? '').replace(/^## /, '');
+      sections.push({ heading, content: sectionContent });
+    }
+
+    return sections;
   }
 
   private async mergeFile(filePath: string, newContent: string): Promise<string | null> {

@@ -40,11 +40,31 @@ describe('FileWriter', () => {
       expect(content).toBe('# Hello');
     });
 
-    it('overwrites an existing AGENTS.md (non-claude file)', async () => {
-      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), '# Old', 'utf-8');
-      await writer.write([makeFile('AGENTS.md', '# New', tmpDir)], makeConfig('overwrite'));
+    it('AGENTS.md is never fully overwritten — adaptive H2 merge always applies', async () => {
+      // With overwrite strategy, AGENTS.md still uses adaptive merge (not blind overwrite).
+      // This protects users who have customized their AGENTS.md with project-specific sections.
+      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), '# Old\n\n## My Custom Section\n\nCustom content.\n', 'utf-8');
+      const newContent = '# New\n\n## New Section\n\nNew content.\n';
+      await writer.write([makeFile('AGENTS.md', newContent, tmpDir)], makeConfig('overwrite'));
       const content = await fs.readFile(path.join(tmpDir, 'AGENTS.md'), 'utf-8');
-      expect(content).toBe('# New');
+      // User's custom section is preserved
+      expect(content).toContain('My Custom Section');
+      // New section from template is appended
+      expect(content).toContain('New Section');
+    });
+
+    it('appends missing H2 sections to existing AGENTS.md', async () => {
+      const existing = '# AGENTS.md\n\n## Project Overview\n\nMy project.\n\n## Agent Workflow\n\nMy workflow.\n';
+      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), existing, 'utf-8');
+      const newContent = '# AGENTS.md\n\n## Project Overview\n\nGenerated.\n\n## Development Commands\n\n```bash\nnpm run dev\n```\n\n## Agent Workflow\n\nGenerated.\n';
+      const result = await writer.write([makeFile('AGENTS.md', newContent, tmpDir)], makeConfig('overwrite'));
+      expect(result.written).toContain('AGENTS.md');
+      const content = await fs.readFile(path.join(tmpDir, 'AGENTS.md'), 'utf-8');
+      // Existing sections preserved (not replaced)
+      expect(content).toContain('My project.');
+      expect(content).toContain('My workflow.');
+      // Missing section from template appended
+      expect(content).toContain('Development Commands');
     });
 
     it('CLAUDE.md is always section-merged even with overwrite strategy — preserves existing content', async () => {
@@ -58,9 +78,9 @@ describe('FileWriter', () => {
       expect(content).toContain('agentctx — First-Run Bootstrap');
     });
 
-    it('creates a backup for AGENTS.md when backup=true and strategy=overwrite', async () => {
-      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), '# Old', 'utf-8');
-      const result = await writer.write([makeFile('AGENTS.md', '# New', tmpDir)], makeConfig('overwrite', true));
+    it('creates a backup for DESIGN.md when backup=true and strategy=overwrite', async () => {
+      await fs.writeFile(path.join(tmpDir, 'DESIGN.md'), '# Old design', 'utf-8');
+      const result = await writer.write([makeFile('DESIGN.md', '# New design', tmpDir)], makeConfig('overwrite', true));
       expect(result.backed_up).toHaveLength(1);
       expect(result.backed_up[0]).toContain('.agentctx-backup');
     });
@@ -77,10 +97,19 @@ describe('FileWriter', () => {
   });
 
   describe('skip strategy (non-overwrite, non-merge)', () => {
-    it('skips existing files', async () => {
+    it('skips existing DESIGN.md in non-overwrite, non-merge mode', async () => {
+      await fs.writeFile(path.join(tmpDir, 'DESIGN.md'), '# Existing', 'utf-8');
+      const result = await writer.write([makeFile('DESIGN.md', '# New', tmpDir)], makeConfig('prompt'));
+      expect(result.skipped).toContain('DESIGN.md');
+      const content = await fs.readFile(path.join(tmpDir, 'DESIGN.md'), 'utf-8');
+      expect(content).toBe('# Existing');
+    });
+
+    it('CLAUDE.md without agentctx sections is up_to_date when template has none either', async () => {
       await fs.writeFile(path.join(tmpDir, 'CLAUDE.md'), '# Existing', 'utf-8');
       const result = await writer.write([makeFile('CLAUDE.md', '# New', tmpDir)], makeConfig('prompt'));
-      expect(result.skipped).toContain('CLAUDE.md');
+      // No agentctx sections in new content → nothing to add → up_to_date
+      expect(result.up_to_date).toContain('CLAUDE.md');
       const content = await fs.readFile(path.join(tmpDir, 'CLAUDE.md'), 'utf-8');
       expect(content).toBe('# Existing');
     });
@@ -106,23 +135,23 @@ describe('FileWriter', () => {
       expect(content).toContain('agentctx — First-Run Bootstrap');
     });
 
-    it('skips write when new content has no agentctx sections (nothing to add)', async () => {
+    it('reports up_to_date when new content has no agentctx sections (nothing to add)', async () => {
       const existing = '# CLAUDE.md\n\n## agentctx — Commit Validation (automatic)\n\nAlready here.\n';
       await fs.writeFile(path.join(tmpDir, 'CLAUDE.md'), existing, 'utf-8');
 
-      // New content has no agentctx sections — nothing to merge → skipped
+      // New content has no agentctx sections — nothing to merge → up_to_date
       const result = await writer.write([makeFile('CLAUDE.md', '# New without agentctx', tmpDir)], makeConfig('merge'));
-      expect(result.skipped).toContain('CLAUDE.md');
+      expect(result.up_to_date).toContain('CLAUDE.md');
       const content = await fs.readFile(path.join(tmpDir, 'CLAUDE.md'), 'utf-8');
       expect(content).toContain('Already here.');
     });
 
-    it('skips merge if new content has no agentctx sections', async () => {
+    it('reports up_to_date when template has no agentctx sections and file has no sections either', async () => {
       const existing = '# Existing\n';
       await fs.writeFile(path.join(tmpDir, 'CLAUDE.md'), existing, 'utf-8');
 
       const result = await writer.write([makeFile('CLAUDE.md', '# New without agentctx', tmpDir)], makeConfig('merge'));
-      expect(result.skipped).toContain('CLAUDE.md');
+      expect(result.up_to_date).toContain('CLAUDE.md');
     });
 
     it('writes new file normally in merge mode (no existing file)', async () => {
@@ -181,13 +210,77 @@ describe('FileWriter', () => {
       expect(content).toContain('NXT AI Development Framework');
     });
 
-    it('skips write when agentctx sections are identical', async () => {
+    it('reports up_to_date when agentctx sections are identical', async () => {
       const existing = nxtConfig.trimEnd() + '\n\n' + agentctxSections;
       await fs.writeFile(path.join(tmpDir, 'CLAUDE.md'), existing, 'utf-8');
 
       // Same agentctx sections → no change needed
       const result = await writer.write([makeFile('CLAUDE.md', generatedClaude, tmpDir)], makeConfig('merge'));
-      expect(result.skipped).toContain('CLAUDE.md');
+      expect(result.up_to_date).toContain('CLAUDE.md');
+    });
+  });
+
+  describe('AGENTS.md adaptive merge (H2-section-aware)', () => {
+    it('writes full template when AGENTS.md does not exist', async () => {
+      const newContent = '# AGENTS.md\n\n## Project Overview\n\nGenerated.\n\n## Agent Workflow\n\nWorkflow.\n';
+      const result = await writer.write([makeFile('AGENTS.md', newContent, tmpDir)], makeConfig('overwrite'));
+      expect(result.written).toContain('AGENTS.md');
+      const content = await fs.readFile(path.join(tmpDir, 'AGENTS.md'), 'utf-8');
+      expect(content).toBe(newContent);
+    });
+
+    it('appends only sections missing from existing AGENTS.md', async () => {
+      const existing = '# AGENTS.md\n\n## Project Overview\n\nMy custom overview.\n';
+      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), existing, 'utf-8');
+
+      const newContent = '# AGENTS.md\n\n## Project Overview\n\nGenerated overview.\n\n## Development Commands\n\n```bash\nnpm run dev\n```\n\n## Agent Workflow\n\nWorkflow steps.\n';
+      const result = await writer.write([makeFile('AGENTS.md', newContent, tmpDir)], makeConfig('overwrite'));
+      expect(result.written).toContain('AGENTS.md');
+
+      const content = await fs.readFile(path.join(tmpDir, 'AGENTS.md'), 'utf-8');
+      // Existing section preserved (not replaced by generated version)
+      expect(content).toContain('My custom overview.');
+      expect(content).not.toContain('Generated overview.');
+      // Missing sections appended
+      expect(content).toContain('Development Commands');
+      expect(content).toContain('Agent Workflow');
+    });
+
+    it('reports up_to_date when all template sections already exist in AGENTS.md', async () => {
+      const existing = '# AGENTS.md\n\n## Project Overview\n\nMy overview.\n\n## Agent Workflow\n\nMy workflow.\n';
+      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), existing, 'utf-8');
+
+      const newContent = '# AGENTS.md\n\n## Project Overview\n\nGenerated.\n\n## Agent Workflow\n\nGenerated.\n';
+      const result = await writer.write([makeFile('AGENTS.md', newContent, tmpDir)], makeConfig('overwrite'));
+      expect(result.up_to_date).toContain('AGENTS.md');
+
+      // Original content unchanged
+      const content = await fs.readFile(path.join(tmpDir, 'AGENTS.md'), 'utf-8');
+      expect(content).toContain('My overview.');
+    });
+
+    it('uses adaptive merge even with --force (overwrite) strategy', async () => {
+      // --force should NOT destroy user-customized AGENTS.md
+      const existing = '# AGENTS.md\n\n## Custom Section\n\nUser wrote this carefully.\n';
+      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), existing, 'utf-8');
+
+      await writer.write([makeFile('AGENTS.md', '# AGENTS.md\n\n## New Section\n\nNew.\n', tmpDir)], makeConfig('overwrite'));
+
+      const content = await fs.readFile(path.join(tmpDir, 'AGENTS.md'), 'utf-8');
+      // User's section preserved
+      expect(content).toContain('User wrote this carefully.');
+      // New section appended
+      expect(content).toContain('New Section');
+    });
+
+    it('section heading comparison is case-insensitive', async () => {
+      const existing = '# AGENTS.md\n\n## project overview\n\nLowercase heading.\n';
+      await fs.writeFile(path.join(tmpDir, 'AGENTS.md'), existing, 'utf-8');
+
+      const newContent = '# AGENTS.md\n\n## Project Overview\n\nTitle case heading.\n';
+      const result = await writer.write([makeFile('AGENTS.md', newContent, tmpDir)], makeConfig('overwrite'));
+      // Should recognize "project overview" == "Project Overview" and skip
+      expect(result.up_to_date).toContain('AGENTS.md');
     });
   });
 });

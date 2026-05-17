@@ -80,6 +80,9 @@ export class InitCommand {
     for (const f of writeResult.skipped) {
       this.reporter.warn(`${f} already exists — use --force to overwrite`);
     }
+    for (const f of writeResult.up_to_date) {
+      this.reporter.info(`${f} is already up to date`);
+    }
     for (const b of writeResult.backed_up) {
       this.reporter.info(`Backed up to ${b}`);
     }
