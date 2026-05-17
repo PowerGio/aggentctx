@@ -34,7 +34,8 @@ Follow the active router pattern — do **not** mix App Router and Pages Router 
 |------|---------|
 {{#if structure.sourceDir}}| \`{{structure.sourceDir}}/\` | Source code |
 {{/if}}| \`app/\` or \`pages/\` | Routes |
-| \`components/\` | UI components |
+{{#if structure.appDirs}}{{#each structure.appDirs}}| \`app/{{this}}/\` | {{this}} |
+{{/each}}{{/if}}| \`components/\` | UI components |
 | \`lib/\` | Shared utilities and clients |
 {{#if structure.testDir}}| \`{{structure.testDir}}/\` | Tests |
 {{/if}}| \`public/\` | Static assets |

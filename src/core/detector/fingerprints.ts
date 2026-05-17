@@ -100,4 +100,10 @@ export const FINGERPRINTS: readonly Fingerprint[] = [
   // ---- Tailwind (boosts confidence for frontend stacks) ----
   { stackId: 'nextjs', files: ['tailwind.config.ts', 'tailwind.config.js'], weight: 3 },
   { stackId: 'react',  files: ['tailwind.config.ts', 'tailwind.config.js'], weight: 3 },
+
+  // ---- Design System ----
+  { stackId: 'design-system', files: ['tailwind-preset.js', 'tailwind-preset.ts'], weight: 15 },
+  { stackId: 'design-system', files: ['tailwind-plugin.js', 'tailwind-plugin.ts'], weight: 12 },
+  { stackId: 'design-system', files: ['tokens.json', 'tokens.ts', 'design-tokens.json'], weight: 10 },
+  { stackId: 'design-system', files: ['theme.js', 'theme.ts'], weight: 5 },
 ];

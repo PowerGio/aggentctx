@@ -10,12 +10,16 @@ export const template = `# CLAUDE.md — {{project.name}}
 {{/each}}
 ## Commands
 
+Each workspace has its own commands — run them from within the workspace directory:
+
+{{#each stack.workspaces}}
 \`\`\`bash
-{{stack.packageManager}} install    # install all workspaces
-{{stack.packageManager}} run dev    # dev server (check workspace scripts)
-{{stack.packageManager}} run build  # build all
-{{stack.packageManager}} run test   # test all
+# {{this.name}} ({{this.path}}/)
+cd {{this.path}}
+{{this.packageManager}} install     # install dependencies
+{{this.packageManager}} run dev     # dev server
 \`\`\`
+{{/each}}
 
 ## Rules
 
@@ -25,7 +29,7 @@ export const template = `# CLAUDE.md — {{project.name}}
 
 ## agentctx — First-Run Bootstrap
 
-If \`.agentctx/pending-bootstrap.md\` exists, this is the **first time aggentctx runs on this project**.
+If \`.agentctx/pending-bootstrap.md\` exists, this is the **first time agentctx runs on this project**.
 Do the following **before any other task**:
 
 1. Read \`.agentctx/pending-bootstrap.md\` for the project summary.
@@ -50,5 +54,5 @@ If it does, read it and do the following **before any other task**:
    appeared in the diff. If so, update \`DEPLOY.md\` accordingly.
 5. Delete \`.agentctx/pending-review.md\` once the review is complete.
 
-> This file is managed by aggentctx. Do not remove this section.
+> This file is managed by agentctx. Do not remove this section.
 `;

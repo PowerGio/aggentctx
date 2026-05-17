@@ -128,13 +128,28 @@ export class ProjectAnalyzer {
       }
     }
 
+    const appDirs = await this.scanAppDirs();
+
     return {
       rootFiles,
       hasCi,
       hasDocker,
       ...(sourceDir !== undefined ? { sourceDir } : {}),
       ...(testDir !== undefined ? { testDir } : {}),
+      ...(appDirs.length > 0 ? { appDirs } : {}),
     };
+  }
+
+  private async scanAppDirs(): Promise<string[]> {
+    try {
+      const entries = await fs.readdir(path.join(this.projectRoot, 'app'), { withFileTypes: true });
+      return entries
+        .filter((e) => e.isDirectory())
+        .map((e) => e.name)
+        .sort();
+    } catch {
+      return [];
+    }
   }
 
   private async detectCi(): Promise<boolean> {

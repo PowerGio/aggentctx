@@ -6,6 +6,7 @@ export type StackId =
   | 'rails'
   | 'go-fiber' | 'go-gin' | 'go-echo'
   | 'expo' | 'react-native'
+  | 'design-system'
   | 'monorepo'
   | 'unknown';
 
@@ -54,6 +55,7 @@ export interface ProjectStructure {
   readonly testDir?: string;
   readonly hasCi: boolean;
   readonly hasDocker: boolean;
+  readonly appDirs?: readonly string[];
 }
 
 export interface GitInfo {

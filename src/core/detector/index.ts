@@ -404,7 +404,8 @@ const STACK_META: Partial<Record<StackId, StackMeta>> & { unknown: StackMeta } =
   'go-fiber':   { name: 'Go Fiber',      ecosystem: 'go',     role: 'backend' },
   'go-gin':     { name: 'Go Gin',        ecosystem: 'go',     role: 'backend' },
   'go-echo':    { name: 'Go Echo',       ecosystem: 'go',     role: 'backend' },
-  expo:         { name: 'Expo',          ecosystem: 'node',   role: 'mobile' },
-  'react-native': { name: 'React Native', ecosystem: 'node', role: 'mobile' },
-  unknown:      { name: 'Unknown',       ecosystem: 'node',   role: 'fullstack' },
+  expo:           { name: 'Expo',          ecosystem: 'node',   role: 'mobile' },
+  'react-native': { name: 'React Native',  ecosystem: 'node',   role: 'mobile' },
+  'design-system': { name: 'Design System', ecosystem: 'node',  role: 'frontend' },
+  unknown:        { name: 'Unknown',       ecosystem: 'node',   role: 'fullstack' },
 };

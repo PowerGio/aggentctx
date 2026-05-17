@@ -14,12 +14,13 @@ import { template as fastapiDesign }  from './stacks/fastapi/DESIGN.md.js';
 import { template as nestjsAgents }   from './stacks/nestjs/AGENTS.md.js';
 import { template as nestjsClaude }   from './stacks/nestjs/CLAUDE.md.js';
 import { template as nestjsDesign }   from './stacks/nestjs/DESIGN.md.js';
-import { template as baseAgents }     from './base/AGENTS.md.js';
-import { template as baseClaude }     from './base/CLAUDE.md.js';
-import { template as baseDesign }     from './base/DESIGN.md.js';
+import { template as designSystemAgents } from './stacks/design-system/AGENTS.md.js';
 import { template as monorepoAgents } from './monorepo/AGENTS.md.js';
-import { template as monorepoClaude } from './monorepo/CLAUDE.md.js';
+import { template as monorepoClaud }  from './monorepo/CLAUDE.md.js';
 import { template as monorepoDesign } from './monorepo/DESIGN.md.js';
+import { template as baseAgents }    from './base/AGENTS.md.js';
+import { template as baseClaude }    from './base/CLAUDE.md.js';
+import { template as baseDesign }    from './base/DESIGN.md.js';
 
 export interface TemplateSet {
   readonly 'AGENTS.md': string;
@@ -58,9 +59,14 @@ const STACK_TEMPLATES: Partial<Record<StackId, TemplateSet>> = {
     'CLAUDE.md': nestjsClaude,
     'DESIGN.md': nestjsDesign,
   },
+  'design-system': {
+    'AGENTS.md': designSystemAgents,
+    'CLAUDE.md': baseClaude,
+    'DESIGN.md': baseDesign,
+  },
   monorepo: {
     'AGENTS.md': monorepoAgents,
-    'CLAUDE.md': monorepoClaude,
+    'CLAUDE.md': monorepoClaud,
     'DESIGN.md': monorepoDesign,
   },
 };
