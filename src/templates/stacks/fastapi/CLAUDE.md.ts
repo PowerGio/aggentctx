@@ -7,11 +7,18 @@ export const template = `# CLAUDE.md — {{project.name}}
 ## Commands
 
 \`\`\`bash
-uvicorn app.main:app --reload   # dev server (hot reload)
+# Dev server — verify the app object name in main.py before running.
+# Common patterns: app, combined_app (Socket.IO), application
+uvicorn app.main:app --reload
+
 pytest                          # tests
 ruff check .                    # lint
 ruff format .                   # format
 \`\`\`
+
+> **Important:** if this project uses Socket.IO (\`socketio.ASGIApp\`), the entry point is
+> likely a combined ASGI app (e.g. \`combined_app\`), not bare \`app\`.
+> Check \`main.py\` for the actual top-level ASGI object before starting the server.
 
 ## Rules
 
@@ -21,6 +28,15 @@ ruff format .                   # format
 - Environment variables: via \`pydantic-settings\` or \`os.environ\` — never hardcode
 - Type hints everywhere — they drive FastAPI's validation and docs generation
 - Run \`pytest\` and \`ruff\` before marking a task complete
+{{#if env.hasEnvExample}}
+
+## Required Environment Variables
+
+| Variable | Description |
+|----------|-------------|
+{{#each env.vars}}| \`{{this.}}\` | — |
+{{/each}}
+{{/if}}
 
 ## agentctx — First-Run Bootstrap
 
@@ -31,7 +47,7 @@ Do the following **before any other task**:
 2. Scan \`app/routers/\` and \`app/api/\` for route definitions. For each router,
    document the user-facing flow and response shape in \`FEATURES.md\`.
 3. Scan \`Makefile\`, \`pyproject.toml\` scripts, and CI files for deploy commands.
-   Append each to \`DEPLOY.md\`, replacing credentials with \`$ENV_VAR\` placeholders.
+   Append each to \`DEPLOY.md\`, replacing credentials with \`\$ENV_VAR\` placeholders.
 4. Delete \`.agentctx/pending-bootstrap.md\` once bootstrap is complete.
 
 ## agentctx — Commit Validation (automatic)

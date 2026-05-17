@@ -93,4 +93,11 @@ export const FINGERPRINTS: readonly Fingerprint[] = [
 
   // ---- React Native ----
   { stackId: 'react-native', packageJsonDeps: ['react-native'], weight: 9 },
+
+  // ---- shadcn/ui (components.json marks a shadcn project, associates with nextjs) ----
+  { stackId: 'nextjs', files: ['components.json'], weight: 4 },
+
+  // ---- Tailwind (boosts confidence for frontend stacks) ----
+  { stackId: 'nextjs', files: ['tailwind.config.ts', 'tailwind.config.js'], weight: 3 },
+  { stackId: 'react',  files: ['tailwind.config.ts', 'tailwind.config.js'], weight: 3 },
 ];

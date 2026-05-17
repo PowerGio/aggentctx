@@ -8,7 +8,7 @@ export const DEFAULT_CONFIG: AgentctxConfig = {
     directory: './',
   },
   update: {
-    strategy: 'overwrite',
+    strategy: 'merge',
     backup: true,
   },
   detection: {

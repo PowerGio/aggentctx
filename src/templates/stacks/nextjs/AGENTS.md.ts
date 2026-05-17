@@ -7,12 +7,22 @@ export const template = `# AGENTS.md — {{project.name}}
 **Stack:** {{stack.primary.name}}{{#if stack.primary.version}} {{stack.primary.version}}{{/if}}
 **Language:** {{stack.language}}
 **Package Manager:** {{stack.packageManager}}
+{{#if stack.isMonorepo}}**Type:** Monorepo
+{{/if}}
 
 ## Architecture
 
-This is a {{stack.primary.name}} project.
 {{#stack "nextjs"}}
-Router: check for \`app/\` directory (App Router) or \`pages/\` (Pages Router).
+This is a Next.js project. Check for:
+- \`app/\` directory → **App Router** (default since Next.js 13+)
+  - \`app/(group)/\` → route groups (no URL segment)
+  - \`app/api/\` → API routes (Route Handlers)
+  - \`app/layout.tsx\` → root layout
+- \`pages/\` directory → **Pages Router** (legacy)
+- \`components.json\` → **shadcn/ui** component library in use
+- \`tailwind.config.*\` → Tailwind CSS
+
+Follow the active router pattern — do **not** mix App Router and Pages Router conventions.
 {{/stack}}
 {{#if stack.isMonorepo}}
 **Monorepo:** Yes — look for workspace packages before assuming single-package structure.
@@ -23,19 +33,47 @@ Router: check for \`app/\` directory (App Router) or \`pages/\` (Pages Router).
 | Path | Purpose |
 |------|---------|
 {{#if structure.sourceDir}}| \`{{structure.sourceDir}}/\` | Source code |
-{{/if}}{{#if structure.testDir}}| \`{{structure.testDir}}/\` | Tests |
+{{/if}}| \`app/\` or \`pages/\` | Routes |
+| \`components/\` | UI components |
+| \`lib/\` | Shared utilities and clients |
+{{#if structure.testDir}}| \`{{structure.testDir}}/\` | Tests |
 {{/if}}| \`public/\` | Static assets |
 
 ## Development Commands
 
 \`\`\`bash
-{{stack.packageManager}} install    # Install dependencies
-{{stack.packageManager}} run dev    # Start dev server (http://localhost:3000)
-{{stack.packageManager}} run build  # Production build
-{{stack.packageManager}} run start  # Start production server
-{{#if conventions.testRunner}}{{stack.packageManager}} run test   # Run tests ({{conventions.testRunner}}){{/if}}
-{{#if conventions.linter}}{{stack.packageManager}} run lint   # Lint ({{conventions.linter}}){{/if}}
+{{stack.packageManager}} install          # Install dependencies
+{{stack.packageManager}} run dev          # Dev server (http://localhost:3000)
+{{stack.packageManager}} run build        # Production build
+{{stack.packageManager}} run start        # Start production server
+{{#if conventions.testRunner}}{{stack.packageManager}} run test         # Run tests ({{conventions.testRunner}}){{/if}}
+{{#if conventions.linter}}{{stack.packageManager}} run lint         # Lint ({{conventions.linter}}){{/if}}
 \`\`\`
+{{#if structure.hasDocker}}
+
+## Docker / Deployment
+
+\`\`\`bash
+docker compose up --build     # Build and start all services
+docker compose up -d          # Start detached
+docker compose down           # Stop and remove containers
+docker compose logs -f        # Follow logs
+\`\`\`
+
+> Check \`Dockerfile\` and \`docker-compose.yml\` for service names and port mappings.
+{{/if}}
+{{#if env.hasEnvExample}}
+
+## Required Environment Variables
+
+Copy \`.env.example\` to \`.env.local\` and set the values:
+
+| Variable | Description |
+|----------|-------------|
+{{#each env.vars}}| \`{{this.}}\` | — |
+{{/each}}
+> Never commit \`.env.local\` to version control.
+{{/if}}
 
 ## Conventions
 
@@ -49,6 +87,7 @@ Router: check for \`app/\` directory (App Router) or \`pages/\` (Pages Router).
 2. **Follow the router pattern** — do not mix App Router and Pages Router conventions
 3. **Imports:** use path aliases defined in \`tsconfig.json\` (usually \`@/\`)
 4. **Types:** this project uses TypeScript — always add types, never use \`any\`
-5. **Tests:** add or update tests for every significant change
-6. **Environment variables:** access only via \`process.env\` — never hardcode secrets
+5. **Server vs Client:** prefer Server Components by default in App Router; use \`'use client'\` only when necessary
+6. **Tests:** add or update tests for every significant change
+7. **Environment variables:** access via \`process.env\` — never hardcode secrets
 `;

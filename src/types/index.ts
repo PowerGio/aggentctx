@@ -73,6 +73,7 @@ export interface ProjectAnalysis {
   readonly structure: ProjectStructure;
   readonly git: GitInfo;
   readonly analyzedAt: Date;
+  readonly envVars: readonly string[];
 }
 
 export interface TemplateVars {
@@ -95,6 +96,10 @@ export interface TemplateVars {
   };
   readonly structure: ProjectStructure;
   readonly git: GitInfo;
+  readonly env: {
+    readonly vars: readonly string[];
+    readonly hasEnvExample: boolean;
+  };
   readonly meta: {
     readonly generatedAt: string;
     readonly agentctxVersion: string;

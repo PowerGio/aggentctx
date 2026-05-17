@@ -7,28 +7,56 @@ export const template = `# AGENTS.md — {{project.name}}
 **Stack:** {{stack.primary.name}}
 **Language:** {{stack.language}}
 **Package Manager:** {{stack.packageManager}}
-{{#if stack.isMonorepo}}**Type:** Monorepo{{/if}}
-
-## Development Setup
-
-<!-- Add setup instructions here -->
+{{#if stack.isMonorepo}}**Type:** Monorepo — look for workspace packages before assuming single-package structure.
+{{/if}}
 
 ## Project Structure
 
 {{#if structure.sourceDir}}- \`{{structure.sourceDir}}/\` — source code{{/if}}
 {{#if structure.testDir}}- \`{{structure.testDir}}/\` — tests{{/if}}
-{{#if structure.hasDocker}}- Docker support detected{{/if}}
+
+## Development Commands
+
+\`\`\`bash
+{{stack.packageManager}} install    # Install dependencies
+{{stack.packageManager}} run dev    # Start dev server
+{{stack.packageManager}} run build  # Production build
+{{#if conventions.testRunner}}{{stack.packageManager}} run test   # Run tests ({{conventions.testRunner}}){{/if}}
+{{#if conventions.linter}}{{stack.packageManager}} run lint   # Lint ({{conventions.linter}}){{/if}}
+\`\`\`
+{{#if structure.hasDocker}}
+
+## Docker / Deployment
+
+\`\`\`bash
+docker compose up --build   # Start all services
+docker compose up -d        # Start detached
+docker compose down         # Stop and remove containers
+\`\`\`
+{{/if}}
+{{#if env.hasEnvExample}}
+
+## Required Environment Variables
+
+Copy \`.env.example\` to \`.env\` and set the values:
+
+| Variable | Description |
+|----------|-------------|
+{{#each env.vars}}| \`{{this.}}\` | — |
+{{/each}}
+> Never commit \`.env\` to version control.
+{{/if}}
 
 ## Conventions
 
 {{#if conventions.linter}}- **Linter:** {{conventions.linter}}{{/if}}
-{{#if conventions.formatter}}- **Formatter:** {{conventions.formatter}}{{/if}}
-{{#if conventions.testRunner}}- **Tests:** {{conventions.testRunner}}{{/if}}
+{{#if conventions.formatter}}- **Formatter:** {{conventions.formatter}} — format before committing{{/if}}
+{{#if conventions.testRunner}}- **Tests:** {{conventions.testRunner}} — run tests before opening PRs{{/if}}
 
 ## Agent Workflow
 
-1. Read existing code patterns before writing new code
-2. Follow the conventions listed above
-3. Add tests for significant changes
-4. Never hardcode secrets — use environment variables
+1. **Read first:** check project manifests and existing code patterns before writing new code
+2. **Follow conventions** — do not introduce conflicting patterns
+3. **Tests:** add or update tests for every significant change
+4. **Secrets:** use environment variables — never hardcode credentials
 `;

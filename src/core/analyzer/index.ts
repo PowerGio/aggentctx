@@ -36,14 +36,19 @@ const CI_FILES: Array<[string, string]> = [
   ['.circleci/config.yml', 'circleci'],
 ];
 
+// Patterns to detect env variable names in example files.
+// Matches: KEY=value, KEY= (empty), # KEY=value (commented)
+const ENV_KEY_PATTERN = /^(?:#\s*)?([A-Z][A-Z0-9_]{1,})\s*=/gm;
+
 export class ProjectAnalyzer {
   constructor(private readonly projectRoot: string) {}
 
   async analyze(detection: DetectionResult, projectName: string): Promise<ProjectAnalysis> {
-    const [rootFiles, conventions, git] = await Promise.all([
+    const [rootFiles, conventions, git, envVars] = await Promise.all([
       this.listRootFiles(),
       this.detectConventions(),
       this.getGitInfo(),
+      this.scanEnvVars(),
     ]);
 
     const structure = await this.analyzeStructure(rootFiles);
@@ -56,6 +61,7 @@ export class ProjectAnalyzer {
       structure,
       git,
       analyzedAt: new Date(),
+      envVars,
     };
   }
 
@@ -100,7 +106,9 @@ export class ProjectAnalyzer {
 
   private async analyzeStructure(rootFiles: string[]): Promise<ProjectStructure> {
     const hasCi = await this.detectCi();
-    const hasDocker = rootFiles.includes('Dockerfile') || rootFiles.includes('docker-compose.yml');
+    const hasDocker = rootFiles.some((f) =>
+      f === 'Dockerfile' || f.startsWith('docker-compose') || f === '.dockerignore',
+    );
 
     const sourceDirs = ['src', 'app', 'lib', 'source'];
     let sourceDir: string | undefined;
@@ -134,6 +142,32 @@ export class ProjectAnalyzer {
       if (await this.exists(file)) return true;
     }
     return false;
+  }
+
+  /**
+   * Scans .env.example and .env.sample for required variable names.
+   * Only variable names (not values) are collected, making this safe to
+   * include in generated context files without leaking secrets.
+   */
+  private async scanEnvVars(): Promise<string[]> {
+    const candidates = ['.env.example', '.env.sample', '.env.template'];
+    const vars = new Set<string>();
+
+    for (const candidate of candidates) {
+      try {
+        const content = await fs.readFile(path.join(this.projectRoot, candidate), 'utf-8');
+        let match: RegExpExecArray | null;
+        ENV_KEY_PATTERN.lastIndex = 0;
+        while ((match = ENV_KEY_PATTERN.exec(content)) !== null) {
+          const key = match[1];
+          if (key !== undefined) vars.add(key);
+        }
+      } catch {
+        // file doesn't exist — continue
+      }
+    }
+
+    return [...vars].sort();
   }
 
   private async getGitInfo(): Promise<GitInfo> {
