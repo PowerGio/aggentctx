@@ -101,6 +101,24 @@ export class ProjectAnalyzer {
       conventions.push({ type: 'typechecker', tool: 'tsc', configFile: 'tsconfig.json' });
     }
 
+    // UI library — shadcn/ui
+    if (await this.exists('components.json')) {
+      const raw = await fs.readFile(path.join(this.projectRoot, 'components.json'), 'utf-8').catch(() => '');
+      const isShadcn = raw.includes('"style"') || raw.includes('"tailwind"') || raw.includes('"aliases"');
+      if (isShadcn) {
+        conventions.push({ type: 'ui-library', tool: 'shadcn/ui', configFile: 'components.json' });
+      }
+    }
+
+    // CSS framework — Tailwind
+    const tailwindConfig = ['tailwind.config.ts', 'tailwind.config.js', 'tailwind.config.mjs'];
+    for (const cfg of tailwindConfig) {
+      if (await this.exists(cfg)) {
+        conventions.push({ type: 'css-framework', tool: 'tailwind', configFile: cfg });
+        break;
+      }
+    }
+
     return conventions;
   }
 

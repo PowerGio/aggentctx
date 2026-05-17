@@ -78,11 +78,19 @@ describe('FileWriter', () => {
       expect(content).toContain('agentctx — First-Run Bootstrap');
     });
 
-    it('creates a backup for DESIGN.md when backup=true and strategy=overwrite', async () => {
-      await fs.writeFile(path.join(tmpDir, 'DESIGN.md'), '# Old design', 'utf-8');
-      const result = await writer.write([makeFile('DESIGN.md', '# New design', tmpDir)], makeConfig('overwrite', true));
-      expect(result.backed_up).toHaveLength(1);
-      expect(result.backed_up[0]).toContain('.agentctx-backup');
+    it('DESIGN.md also uses adaptive merge — backup is not created for it (no blind overwrite)', async () => {
+      // DESIGN.md now has the same H2-adaptive protection as AGENTS.md.
+      // With backup=true + overwrite strategy, it still uses adaptive merge instead.
+      await fs.writeFile(path.join(tmpDir, 'DESIGN.md'), '# Old design\n\n## Existing Section\n\nContent.\n', 'utf-8');
+      const newContent = '# Design\n\n## New Section\n\nNew content.\n';
+      const result = await writer.write([makeFile('DESIGN.md', newContent, tmpDir)], makeConfig('overwrite', true));
+      // No backup for adaptive-merged files
+      expect(result.backed_up).toHaveLength(0);
+      // Missing section was appended
+      expect(result.written).toContain('DESIGN.md');
+      const content = await fs.readFile(path.join(tmpDir, 'DESIGN.md'), 'utf-8');
+      expect(content).toContain('Existing Section');
+      expect(content).toContain('New Section');
     });
 
     it('writes multiple files', async () => {
@@ -97,10 +105,11 @@ describe('FileWriter', () => {
   });
 
   describe('skip strategy (non-overwrite, non-merge)', () => {
-    it('skips existing DESIGN.md in non-overwrite, non-merge mode', async () => {
+    it('DESIGN.md reports up_to_date when template has no new H2 sections to add', async () => {
+      // DESIGN.md now uses adaptive merge — if nothing new to add, it shows as up_to_date
       await fs.writeFile(path.join(tmpDir, 'DESIGN.md'), '# Existing', 'utf-8');
       const result = await writer.write([makeFile('DESIGN.md', '# New', tmpDir)], makeConfig('prompt'));
-      expect(result.skipped).toContain('DESIGN.md');
+      expect(result.up_to_date).toContain('DESIGN.md');
       const content = await fs.readFile(path.join(tmpDir, 'DESIGN.md'), 'utf-8');
       expect(content).toBe('# Existing');
     });

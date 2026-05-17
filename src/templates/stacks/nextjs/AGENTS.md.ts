@@ -21,6 +21,7 @@ This is a Next.js project. Check for:
 - \`pages/\` directory → **Pages Router** (legacy)
 - \`components.json\` → **shadcn/ui** component library in use
 - \`tailwind.config.*\` → Tailwind CSS
+{{#if conventions.uiLibrary}}- **shadcn/ui detected** — components live in \`components/ui/\`; extend via \`npx shadcn@latest add <component>\`{{/if}}
 
 Follow the active router pattern — do **not** mix App Router and Pages Router conventions.
 {{/stack}}
@@ -81,6 +82,8 @@ Copy \`.env.example\` to \`.env.local\` and set the values:
 {{#if conventions.linter}}- **Linter:** {{conventions.linter}}{{/if}}
 {{#if conventions.formatter}}- **Formatter:** {{conventions.formatter}} — format before committing{{/if}}
 {{#if conventions.testRunner}}- **Tests:** {{conventions.testRunner}} — run tests before opening PRs{{/if}}
+{{#if conventions.uiLibrary}}- **UI Library:** {{conventions.uiLibrary}} — use existing components from \`components/ui/\` before creating new ones{{/if}}
+{{#if conventions.cssFramework}}- **CSS Framework:** {{conventions.cssFramework}} — use utility classes, avoid inline styles{{/if}}
 
 ## Agent Workflow
 

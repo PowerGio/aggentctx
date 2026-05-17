@@ -1,3 +1,6 @@
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { Command } from 'commander';
 import { ConsoleReporter } from '../ui/reporter.js';
 import { InitCommand } from '../commands/init.js';
@@ -5,28 +8,53 @@ import { ValidateCommand } from '../commands/validate.js';
 import { FeatureCommand } from '../commands/feature.js';
 import { DeployCommand } from '../commands/deploy.js';
 import { HookCommand } from '../commands/hook.js';
+import { UpdateCommand } from '../commands/update.js';
+import { StatusCommand } from '../commands/status.js';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const pkg = JSON.parse(readFileSync(join(__dirname, '../../package.json'), 'utf-8')) as { version: string };
 
 const program = new Command();
 
 program
   .name('agentctx')
   .description('Generate and maintain AI agent context files for your codebase')
-  .version('0.1.0');
+  .version(pkg.version ?? '0.0.0');
 
 // ─── init ────────────────────────────────────────────────────────────────────
+
+const VALID_STACKS = [
+  'nextjs', 'react', 'astro', 'remix', 'nuxt', 'svelte', 'vite',
+  'express', 'fastify', 'nestjs', 'hono',
+  'django', 'fastapi', 'flask',
+  'laravel', 'symfony',
+  'rails',
+  'go-fiber', 'go-gin', 'go-echo',
+  'expo', 'react-native',
+  'design-system',
+  'monorepo',
+  'unknown',
+];
 
 program
   .command('init [dir]')
   .description('Analyze your project and generate AGENTS.md, CLAUDE.md, DESIGN.md')
   .option('--dry-run', 'Preview without writing files', false)
-  .option('-f, --force', 'Overwrite existing context files', false)
+  .option('-f, --force', 'Update agentctx sections and append missing content (never blindly overwrites)', false)
   .option('--no-agents', 'Skip AGENTS.md')
   .option('--no-claude', 'Skip CLAUDE.md')
   .option('--no-design', 'Skip DESIGN.md')
+  .option('--stack <stack>', 'Force a specific stack (e.g. nextjs, fastapi, monorepo, django)')
   .action(async (dir: string | undefined, opts: Record<string, unknown>) => {
     const targetDir = dir ?? process.cwd();
     const reporter = new ConsoleReporter();
     try {
+      const stackArg = opts['stack'] as string | undefined;
+      if (stackArg && !VALID_STACKS.includes(stackArg)) {
+        reporter.error(`Unknown stack: "${stackArg}". Valid options: ${VALID_STACKS.join(', ')}`);
+        process.exit(1);
+      }
       await new InitCommand(reporter).execute({
         targetDir,
         dryRun: opts['dryRun'] === true,
@@ -38,10 +66,21 @@ program
             design: opts['design'] !== false,
             directory: targetDir,
           },
+          detection: {
+            ...(stackArg ? { forceStack: stackArg as import('../types/index.js').StackId } : {}),
+            excludeDirs: [],
+          },
         },
       });
     } catch (e) {
-      reporter.error(e instanceof Error ? e.message : 'Unexpected error');
+      if (e instanceof Error) {
+        reporter.error(e.message);
+        if (e.cause instanceof Error) {
+          reporter.info(`Caused by: ${e.cause.message}`);
+        }
+      } else {
+        reporter.error('Unexpected error');
+      }
       process.exit(1);
     }
   });
@@ -57,7 +96,14 @@ program
     try {
       await new ValidateCommand(reporter).execute({ targetDir });
     } catch (e) {
-      reporter.error(e instanceof Error ? e.message : 'Unexpected error');
+      if (e instanceof Error) {
+        reporter.error(e.message);
+        if (e.cause instanceof Error) {
+          reporter.info(`Caused by: ${e.cause.message}`);
+        }
+      } else {
+        reporter.error('Unexpected error');
+      }
       process.exit(1);
     }
   });
@@ -201,6 +247,56 @@ hook
       await new HookCommand(reporter).uninstall(opts.dir);
     } catch (e) {
       reporter.error(e instanceof Error ? e.message : 'Unexpected error');
+      process.exit(1);
+    }
+  });
+
+// ─── update ──────────────────────────────────────────────────────────────────
+
+program
+  .command('update [dir]')
+  .description('Add missing context sections to existing files (merge-only, never overwrites)')
+  .option('--dry-run', 'Preview without writing files', false)
+  .action(async (dir: string | undefined, opts: Record<string, unknown>) => {
+    const targetDir = dir ?? process.cwd();
+    const reporter = new ConsoleReporter();
+    try {
+      await new UpdateCommand(reporter).execute({
+        targetDir,
+        dryRun: opts['dryRun'] === true,
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        reporter.error(e.message);
+        if (e.cause instanceof Error) {
+          reporter.info(`Caused by: ${e.cause.message}`);
+        }
+      } else {
+        reporter.error('Unexpected error');
+      }
+      process.exit(1);
+    }
+  });
+
+// ─── status ──────────────────────────────────────────────────────────────────
+
+program
+  .command('status [dir]')
+  .description('Show the state of context files and detected stack')
+  .action(async (dir: string | undefined) => {
+    const targetDir = dir ?? process.cwd();
+    const reporter = new ConsoleReporter();
+    try {
+      await new StatusCommand(reporter).execute({ targetDir });
+    } catch (e) {
+      if (e instanceof Error) {
+        reporter.error(e.message);
+        if (e.cause instanceof Error) {
+          reporter.info(`Caused by: ${e.cause.message}`);
+        }
+      } else {
+        reporter.error('Unexpected error');
+      }
       process.exit(1);
     }
   });

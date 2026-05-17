@@ -10,6 +10,7 @@ import type {
   PackageManager,
   Language,
   Ecosystem,
+  WorkspaceInfo,
 } from '../../types/index.js';
 
 const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', '.next', 'vendor', '__pycache__', '.venv']);
@@ -23,7 +24,7 @@ interface StackScore {
 export class StackDetector {
   constructor(private readonly projectRoot: string) {}
 
-  async detect(): Promise<DetectionResult> {
+  async detect(forceStack?: StackId): Promise<DetectionResult> {
     const rootFiles = await this.listRootFiles();
 
     // Detect monorepo first — before scoring — so primaryStack can fall back to 'monorepo'
@@ -37,6 +38,30 @@ export class StackDetector {
     const requirementsTxt = await this.readRequirementsTxt();
     const composerJson = await this.readComposerJson();
     const goMod = await this.readGoMod();
+
+    const packageManager = this.detectPackageManager(rootFiles, pkgJson, workspaces);
+    const language = this.detectLanguage(rootFiles, pkgJson, requirementsTxt, goMod, workspaces);
+
+    // Si el usuario forzó un stack, usarlo directamente sin correr el scoring
+    if (forceStack) {
+      const meta = STACK_META[forceStack] ?? STACK_META['unknown']!;
+      const primaryStack: StackInfo = {
+        id: forceStack,
+        name: meta.name,
+        ecosystem: meta.ecosystem,
+        role: meta.role,
+        confidence: 'definitive',
+        indicators: ['--stack flag'],
+      };
+      return {
+        primaryStack,
+        additionalStacks: [],
+        isMonorepo,
+        packageManager,
+        language,
+        workspaces,
+      };
+    }
 
     const scores = await this.scoreAll(rootFiles, pkgJson, requirementsTxt, composerJson, goMod);
     const sorted = scores.sort((a, b) => b.score - a.score);
@@ -52,9 +77,6 @@ export class StackDetector {
       .slice(1)
       .filter((s) => s.score >= 5)
       .map((s) => this.buildStackInfo(s, pkgJson, goMod));
-
-    const packageManager = this.detectPackageManager(rootFiles, pkgJson);
-    const language = this.detectLanguage(rootFiles, pkgJson, requirementsTxt, goMod);
 
     return {
       primaryStack,
@@ -335,7 +357,35 @@ export class StackDetector {
   private detectPackageManager(
     rootFiles: string[],
     pkgJson: Record<string, unknown> | null,
+    workspaces: readonly WorkspaceInfo[] = [],
   ): PackageManager {
+    // Para monorepos: contar el packageManager más frecuente entre los workspaces
+    if (workspaces.length > 0) {
+      const counts = new Map<PackageManager, number>();
+      for (const ws of workspaces) {
+        if (ws.packageManager !== 'unknown') {
+          counts.set(ws.packageManager, (counts.get(ws.packageManager) ?? 0) + 1);
+        }
+      }
+      if (counts.size > 0) {
+        // Orden de preferencia en caso de empate
+        const preference: PackageManager[] = ['npm', 'pnpm', 'yarn', 'bun', 'pip', 'poetry', 'go', 'composer', 'bundler'];
+        let best: PackageManager | null = null;
+        let bestCount = 0;
+        for (const [pm, count] of counts) {
+          if (
+            count > bestCount ||
+            (count === bestCount && best !== null && preference.indexOf(pm) < preference.indexOf(best))
+          ) {
+            best = pm;
+            bestCount = count;
+          }
+        }
+        if (best !== null) return best;
+      }
+    }
+
+    // Lógica original: leer archivos del root
     const pmField = pkgJson?.['packageManager'] as string | undefined;
     if (pmField) {
       if (pmField.startsWith('pnpm')) return 'pnpm';
@@ -351,6 +401,8 @@ export class StackDetector {
     if (rootFiles.includes('composer.json'))    return 'composer';
     if (rootFiles.includes('Gemfile'))          return 'bundler';
     if (rootFiles.includes('go.mod'))           return 'go';
+    // Si hay package.json pero no lockfile conocido, asumir npm (es el PM default de Node)
+    if (rootFiles.includes('package.json')) return 'npm';
     return 'unknown';
   }
 
@@ -359,7 +411,35 @@ export class StackDetector {
     pkgJson: Record<string, unknown> | null,
     requirementsTxt: string[],
     goMod: string | null,
+    workspaces: readonly WorkspaceInfo[] = [],
   ): Language {
+    // Para monorepos: contar el language más frecuente entre los workspaces
+    if (workspaces.length > 0) {
+      const counts = new Map<Language, number>();
+      for (const ws of workspaces) {
+        if (ws.language !== 'unknown') {
+          counts.set(ws.language, (counts.get(ws.language) ?? 0) + 1);
+        }
+      }
+      if (counts.size > 0) {
+        // Orden de preferencia en caso de empate
+        const preference: Language[] = ['typescript', 'javascript', 'python', 'go', 'rust', 'php', 'ruby'];
+        let best: Language | null = null;
+        let bestCount = 0;
+        for (const [lang, count] of counts) {
+          if (
+            count > bestCount ||
+            (count === bestCount && best !== null && preference.indexOf(lang) < preference.indexOf(best))
+          ) {
+            best = lang;
+            bestCount = count;
+          }
+        }
+        if (best !== null) return best;
+      }
+    }
+
+    // Lógica original: leer archivos del root
     if (pkgJson) {
       const allDeps = {
         ...((pkgJson['dependencies'] as Record<string, string> | undefined) ?? {}),

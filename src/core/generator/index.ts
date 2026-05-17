@@ -50,6 +50,8 @@ export class ContextGenerator {
     const linter = analysis.conventions.find((c) => c.type === 'linter')?.tool;
     const formatter = analysis.conventions.find((c) => c.type === 'formatter')?.tool;
     const testRunner = analysis.conventions.find((c) => c.type === 'testing')?.tool;
+    const uiLibrary = analysis.conventions.find((c) => c.type === 'ui-library')?.tool;
+    const cssFramework = analysis.conventions.find((c) => c.type === 'css-framework')?.tool;
 
     return {
       project: {
@@ -68,6 +70,8 @@ export class ContextGenerator {
         ...(linter !== undefined ? { linter } : {}),
         ...(formatter !== undefined ? { formatter } : {}),
         ...(testRunner !== undefined ? { testRunner } : {}),
+        ...(uiLibrary !== undefined ? { uiLibrary } : {}),
+        ...(cssFramework !== undefined ? { cssFramework } : {}),
       },
       structure: analysis.structure,
       git: analysis.git,

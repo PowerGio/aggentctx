@@ -44,16 +44,16 @@ export class FileWriter {
         continue;
       }
 
-      // AGENTS.md uses H2-adaptive merge: only appends sections missing from the existing file.
-      // Never overwrites user content, even with --force. The user's own sections are always preserved.
-      if (file.filename === 'AGENTS.md' && exists) {
+      // AGENTS.md and DESIGN.md use H2-adaptive merge: only appends sections missing from the
+      // existing file. Never overwrites user content, even with --force.
+      if ((file.filename === 'AGENTS.md' || file.filename === 'DESIGN.md') && exists) {
         if (!dryRun) {
           const merged = await this.mergeAgentsAdaptive(file.outputPath, file.content);
           if (merged !== null) {
             await fs.writeFile(file.outputPath, merged, 'utf-8');
             written.push(file.filename);
           } else {
-            up_to_date.push(file.filename); // all template sections already present
+            up_to_date.push(file.filename);
           }
         } else {
           written.push(file.filename);

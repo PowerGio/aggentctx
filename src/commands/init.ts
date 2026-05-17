@@ -38,8 +38,25 @@ export class InitCommand {
 
     this.reporter.section('Detecting project stack...');
 
+    if (config.detection?.forceStack) {
+      this.reporter.info(`Stack override: ${config.detection.forceStack}`);
+    }
+
     const detector = new StackDetector(targetDir);
-    const detection = await detector.detect();
+    let detection: Awaited<ReturnType<StackDetector['detect']>>;
+    try {
+      detection = await detector.detect(config.detection?.forceStack);
+    } catch (e) {
+      if (e instanceof Error) {
+        if (e.message.includes('EACCES') || e.message.toLowerCase().includes('permission denied')) {
+          throw new Error(`Permission denied reading project files. Try: sudo agentctx init`, { cause: e });
+        }
+        if (e.message.includes('ENOENT') && e.message.includes(targetDir)) {
+          throw new Error(`Directory not found: ${targetDir}`, { cause: e });
+        }
+      }
+      throw e;
+    }
 
     this.reporter.info(`Stack: ${detection.primaryStack.name} (${detection.primaryStack.confidence})`);
     this.reporter.info(`Language: ${detection.language}`);

@@ -44,7 +44,7 @@ export interface DetectionResult {
 }
 
 export interface Convention {
-  readonly type: 'linter' | 'formatter' | 'testing' | 'bundler' | 'typechecker';
+  readonly type: 'linter' | 'formatter' | 'testing' | 'bundler' | 'typechecker' | 'ui-library' | 'css-framework';
   readonly tool: string;
   readonly configFile?: string;
 }
@@ -95,6 +95,8 @@ export interface TemplateVars {
     readonly linter?: string;
     readonly formatter?: string;
     readonly testRunner?: string;
+    readonly uiLibrary?: string;
+    readonly cssFramework?: string;
   };
   readonly structure: ProjectStructure;
   readonly git: GitInfo;

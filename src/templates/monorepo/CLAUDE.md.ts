@@ -2,7 +2,7 @@ export const template = `# CLAUDE.md — {{project.name}}
 
 ## Project
 
-**{{project.name}}** — Monorepo / {{stack.packageManager}}
+**{{project.name}}** — Monorepo with {{stack.workspaces.length}} workspaces
 
 ## Workspaces
 
