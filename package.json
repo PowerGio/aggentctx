@@ -1,10 +1,10 @@
 {
   "name": "aggentctx",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Generate and maintain AI agent context files for your codebase",
   "type": "module",
   "bin": {
-    "aggentctx": "dist/bin/agentctx.js"
+    "agentctx": "./dist/bin/agentctx.js"
   },
   "exports": {
     ".": {

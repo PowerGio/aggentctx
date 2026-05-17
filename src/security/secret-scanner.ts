@@ -6,7 +6,7 @@ interface SecretPattern {
 
 const SECRET_PATTERNS: readonly SecretPattern[] = [
   { name: 'AWS Access Key',       severity: 'critical', pattern: /\bAKIA[0-9A-Z]{16}\b/ },
-  { name: 'GCP API Key',          severity: 'critical', pattern: /AIza[0-9A-Za-z\-_]{35}/ },
+  { name: 'GCP API Key',          severity: 'critical', pattern: /AIza[0-9A-Za-z_-]{35}/ },
   { name: 'Stripe Live Key',      severity: 'critical', pattern: /sk_live_[0-9a-zA-Z]{24,}/ },
   { name: 'Stripe Test Key',      severity: 'high',     pattern: /sk_test_[0-9a-zA-Z]{24,}/ },
   { name: 'GitHub Token',         severity: 'critical', pattern: /gh[pousr]_[A-Za-z0-9_]{36,255}/ },
