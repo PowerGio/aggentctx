@@ -1,6 +1,6 @@
 {
-  "name": "agentcontext",
-  "version": "0.2.5",
+  "name": "aggentctx",
+  "version": "0.2.6",
   "description": "Generate and maintain AI agent context files for your codebase",
   "license": "MIT",
   "repository": {
