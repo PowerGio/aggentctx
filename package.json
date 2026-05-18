@@ -1,19 +1,19 @@
 {
   "name": "aggentctx",
-  "version": "0.2.6",
+  "version": "0.2.7",
   "description": "Generate and maintain AI agent context files for your codebase",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/PowerGio/agentcontext.git"
+    "url": "https://github.com/PowerGio/aggentctx.git"
   },
-  "homepage": "https://github.com/PowerGio/agentcontext#readme",
+  "homepage": "https://github.com/PowerGio/aggentctx#readme",
   "bugs": {
-    "url": "https://github.com/PowerGio/agentcontext/issues"
+    "url": "https://github.com/PowerGio/aggentctx/issues"
   },
   "type": "module",
   "bin": {
-    "agentctx": "./dist/bin/agentctx.js"
+    "aggentctx": "./dist/bin/agentctx.js"
   },
   "exports": {
     ".": {
