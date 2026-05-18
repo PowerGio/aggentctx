@@ -15,7 +15,7 @@ AI coding agents lose context between sessions. They don't know how your feature
 ## Quick start
 
 ```bash
-npx aggentctx init
+npx agentctx init
 ```
 
 That's it. Run it in any project directory. agentctx detects your stack, generates the context files, and writes a bootstrap signal so Claude Code documents your existing features on the next prompt.
@@ -24,11 +24,11 @@ That's it. Run it in any project directory. agentctx detects your stack, generat
 
 ```bash
 # Global
-npm install -g aggentctx   # instala el paquete
+npm install -g agentctx   # instala el paquete
 agentctx init              # el binario se llama 'agentctx'
 
 # O sin instalación
-npx aggentctx init
+npx agentctx init
 ```
 
 ## Commands
