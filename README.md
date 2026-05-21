@@ -15,7 +15,7 @@ AI coding agents lose context between sessions. They don't know how your feature
 ## Quick start
 
 ```bash
-npx agentctx init
+npx aggentctx init
 ```
 
 That's it. Run it in any project directory. agentctx detects your stack, generates the context files, and writes a bootstrap signal so Claude Code documents your existing features on the next prompt.
@@ -24,11 +24,11 @@ That's it. Run it in any project directory. agentctx detects your stack, generat
 
 ```bash
 # Global
-npm install -g agentctx   # instala el paquete
-agentctx init              # el binario se llama 'agentctx'
+npm install -g aggentctx   # npm package name
+agentctx init              # CLI command
 
-# O sin instalación
-npx agentctx init
+# Without installing
+npx aggentctx init
 ```
 
 ## Commands
@@ -42,7 +42,9 @@ agentctx init                  # Current directory
 agentctx init ./my-project     # Specific directory
 agentctx init --dry-run        # Preview without writing
 agentctx init --force          # Update agentctx sections, append missing content
+agentctx init --no-agents      # Skip AGENTS.md
 agentctx init --no-claude      # Skip CLAUDE.md
+agentctx init --no-design      # Skip DESIGN.md
 agentctx init --stack nextjs   # Force stack detection (nextjs, fastapi, monorepo, etc.)
 ```
 

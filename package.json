@@ -13,7 +13,7 @@
   },
   "type": "module",
   "bin": {
-    "aggentctx": "./dist/bin/agentctx.js"
+    "agentctx": "./dist/bin/agentctx.js"
   },
   "exports": {
     ".": {
