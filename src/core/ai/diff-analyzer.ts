@@ -1,5 +1,6 @@
 import type { FeatureBehavior } from '../features/types.js';
 import { getClient, AI_MODEL } from './client.js';
+import { withRetry } from '../../utils/retry.js';
 
 export interface DiffAnalysis {
   changed: boolean;
@@ -48,19 +49,21 @@ Respond with JSON in this exact shape:
 }
 If changed is false, omit the suggestedBehavior key entirely.`;
 
-  const response = await client.messages.create({
-    model: AI_MODEL,
-    max_tokens: 2048,
-    thinking: { type: 'enabled', budget_tokens: 1024 },
-    system: [
-      {
-        type: 'text',
-        text: SYSTEM_PROMPT,
-        cache_control: { type: 'ephemeral' },
-      },
-    ],
-    messages: [{ role: 'user', content: userMessage }],
-  });
+  const response = await withRetry(() =>
+    client.messages.create({
+      model: AI_MODEL,
+      max_tokens: 2048,
+      thinking: { type: 'enabled', budget_tokens: 1024 },
+      system: [
+        {
+          type: 'text',
+          text: SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  );
 
   const textBlock = response.content.find((b) => b.type === 'text');
   if (!textBlock || textBlock.type !== 'text') {

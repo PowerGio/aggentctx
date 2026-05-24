@@ -4,7 +4,11 @@ import { template as nextjsAgents }  from './stacks/nextjs/AGENTS.md.js';
 import { template as nextjsClaude }  from './stacks/nextjs/CLAUDE.md.js';
 import { template as nextjsDesign }  from './stacks/nextjs/DESIGN.md.js';
 import { template as djangoAgents }  from './stacks/django/AGENTS.md.js';
+import { template as djangoClaude }  from './stacks/django/CLAUDE.md.js';
+import { template as djangoDesign }  from './stacks/django/DESIGN.md.js';
 import { template as laravelAgents } from './stacks/laravel/AGENTS.md.js';
+import { template as laravelClaude } from './stacks/laravel/CLAUDE.md.js';
+import { template as laravelDesign } from './stacks/laravel/DESIGN.md.js';
 import { template as expressAgents }  from './stacks/express/AGENTS.md.js';
 import { template as expressClaude }  from './stacks/express/CLAUDE.md.js';
 import { template as expressDesign }  from './stacks/express/DESIGN.md.js';
@@ -36,13 +40,13 @@ const STACK_TEMPLATES: Partial<Record<StackId, TemplateSet>> = {
   },
   django: {
     'AGENTS.md': djangoAgents,
-    'CLAUDE.md': baseClaude,
-    'DESIGN.md': baseDesign,
+    'CLAUDE.md': djangoClaude,
+    'DESIGN.md': djangoDesign,
   },
   laravel: {
     'AGENTS.md': laravelAgents,
-    'CLAUDE.md': baseClaude,
-    'DESIGN.md': baseDesign,
+    'CLAUDE.md': laravelClaude,
+    'DESIGN.md': laravelDesign,
   },
   express: {
     'AGENTS.md': expressAgents,

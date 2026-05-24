@@ -153,8 +153,8 @@ After every `git commit`, the hook writes `.agentctx/pending-review.md` with the
 | Express | ✅ | ✅ | ✅ |
 | NestJS | ✅ | ✅ | ✅ |
 | FastAPI | ✅ | ✅ | ✅ |
-| Django | ✅ | ✅ | base |
-| Laravel | ✅ | ✅ | base |
+| Django | ✅ | ✅ | ✅ |
+| Laravel | ✅ | ✅ | ✅ |
 | + 14 detected | base | base | base |
 
 Detection covers: Astro, Remix, Nuxt, Svelte, React, Vite, Fastify, Hono, Flask, Symfony, Rails, Go (Fiber/Gin/Echo), Expo, React Native.

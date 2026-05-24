@@ -1,4 +1,5 @@
 import { getClient, AI_MODEL } from './client.js';
+import { withRetry } from '../../utils/retry.js';
 
 export interface DetectedDeployCommand {
   environment: string;
@@ -40,19 +41,21 @@ Respond with a JSON array. Each item must match this shape exactly:
 If no deploy commands are found, return an empty array: []
 Omit the "notes" key when there is nothing notable to add.`;
 
-  const response = await client.messages.create({
-    model: AI_MODEL,
-    max_tokens: 4096,
-    thinking: { type: 'enabled', budget_tokens: 1024 },
-    system: [
-      {
-        type: 'text',
-        text: SYSTEM_PROMPT,
-        cache_control: { type: 'ephemeral' },
-      },
-    ],
-    messages: [{ role: 'user', content: userMessage }],
-  });
+  const response = await withRetry(() =>
+    client.messages.create({
+      model: AI_MODEL,
+      max_tokens: 4096,
+      thinking: { type: 'enabled', budget_tokens: 1024 },
+      system: [
+        {
+          type: 'text',
+          text: SYSTEM_PROMPT,
+          cache_control: { type: 'ephemeral' },
+        },
+      ],
+      messages: [{ role: 'user', content: userMessage }],
+    }),
+  );
 
   const textBlock = response.content.find((b) => b.type === 'text');
   if (!textBlock || textBlock.type !== 'text') return [];
