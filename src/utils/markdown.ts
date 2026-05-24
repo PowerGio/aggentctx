@@ -8,7 +8,6 @@ export function extractSection(
   level: 1 | 2 | 3 = 2,
 ): string | null {
   const hashes = '#'.repeat(level);
-  const headingPrefix = `${hashes} `;
   const lines = content.split('\n');
 
   const startIdx = lines.findIndex((l) => {

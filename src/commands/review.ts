@@ -91,7 +91,7 @@ export class ReviewCommand {
 
 function parseChangedFiles(content: string): string[] {
   const section = content.match(/## Changed files\n([\s\S]*?)(?=\n## |\n```|$)/);
-  if (!section) return [];
+  if (!section?.[1]) return [];
   return section[1]
     .split('\n')
     .map((l) => l.replace(/^-\s+/, '').trim())
@@ -100,5 +100,5 @@ function parseChangedFiles(content: string): string[] {
 
 function parseDiff(content: string): string {
   const match = content.match(/```diff\n([\s\S]*?)```/);
-  return match ? match[1] : '';
+  return match?.[1] ?? '';
 }

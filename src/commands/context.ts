@@ -50,7 +50,7 @@ function parseDeployMd(content: string): DeployEnv[] {
     const notesMatch = block.match(/\*\*Notes:\*\* (.+)/);
     const notes = notesMatch ? notesMatch[1]!.trim() : undefined;
 
-    envs.push({ name, envVars, notes });
+    envs.push({ name, envVars, ...(notes ? { notes } : {}) });
   }
 
   return envs;
