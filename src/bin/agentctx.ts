@@ -11,6 +11,7 @@ import { HookCommand } from '../commands/hook.js';
 import { UpdateCommand } from '../commands/update.js';
 import { StatusCommand } from '../commands/status.js';
 import { ReviewCommand } from '../commands/review.js';
+import { ContextCommand } from '../commands/context.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -332,6 +333,41 @@ program
         if (e.cause instanceof Error) {
           reporter.info(`Caused by: ${e.cause.message}`);
         }
+      } else {
+        reporter.error('Unexpected error');
+      }
+      process.exit(1);
+    }
+  });
+
+// ─── context ─────────────────────────────────────────────────────────────────
+
+program
+  .command('context [dir]')
+  .description('Generate context-bundle.md — compact context snapshot for AI agents (no API key needed)')
+  .option('--dry-run',          'Preview to stdout without writing',      false)
+  .option('--compact',          'Minimal output — commands + rules only', false)
+  .option('--no-features',      'Exclude feature registry section')
+  .option('--no-deploy',        'Exclude deploy environments section')
+  .option('--no-architecture',  'Exclude architecture section')
+  .option('--no-rules',         'Exclude rules section')
+  .action(async (dir: string | undefined, opts: Record<string, unknown>) => {
+    const targetDir = dir ?? process.cwd();
+    const reporter = new ConsoleReporter();
+    try {
+      await new ContextCommand(reporter).execute({
+        targetDir,
+        dryRun:          opts['dryRun']          === true,
+        compact:         opts['compact']         === true,
+        noFeatures:      opts['features']        === false,
+        noDeploy:        opts['deploy']          === false,
+        noArchitecture:  opts['architecture']    === false,
+        noRules:         opts['rules']           === false,
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        reporter.error(e.message);
+        if (e.cause instanceof Error) reporter.info(`Caused by: ${e.cause.message}`);
       } else {
         reporter.error('Unexpected error');
       }

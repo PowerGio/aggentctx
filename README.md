@@ -145,6 +145,27 @@ agentctx hook uninstall        # Remove the hook
 
 After every `git commit`, the hook writes `.agentctx/pending-review.md` with the diff. Claude Code reads `CLAUDE.md`, finds the review instructions, and automatically updates `FEATURES.md` if behavior changed.
 
+### `agentctx context [dir]`
+
+Generate `context-bundle.md` — a compact snapshot of your project context for AI agents.
+
+```bash
+agentctx context                    # Generate context-bundle.md (~600 tokens)
+agentctx context --dry-run          # Preview without writing
+agentctx context --compact          # Minimal version — commands + rules only
+agentctx context --no-features      # Skip feature registry
+agentctx context --no-deploy        # Skip deploy environments
+agentctx context --no-architecture  # Skip architecture section
+```
+
+The bundle extracts the essential sections from your existing context files (CLAUDE.md, DESIGN.md, FEATURES.md, DEPLOY.md) into a single ~600-token file. Agents read it at session start instead of exploring 5+ files.
+
+- No API key required — fully static generation
+- Runs SecretScanner before writing — deploy commands are never included, only env var names
+- Add `context-bundle.md` to `.gitignore` (it is generated and disposable)
+
+Every `agentctx init` template now includes a `## agentctx — Context Bundle` section in `CLAUDE.md` that instructs agents to read `context-bundle.md` first.
+
 ### `agentctx review [dir]`
 
 Manually close the hook loop — useful when running outside Claude Code or to replay a pending review.

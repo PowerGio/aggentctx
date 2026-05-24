@@ -65,5 +65,17 @@ If it does, read it and do the following **before any other task**:
    appeared in the diff. If so, update \`DEPLOY.md\` accordingly.
 5. Delete \`.agentctx/pending-review.md\` once the review is complete.
 
+## agentctx — Context Bundle
+
+If \`context-bundle.md\` exists in the project root, **read it at session start** instead of exploring individual files.
+It contains commands, rules, architecture, features, and deploy environments in ~600 tokens.
+
+Regenerate it after major changes:
+
+\`\`\`bash
+agentctx context           # Regenerate context-bundle.md
+agentctx context --compact # Minimal version (~300 tokens)
+\`\`\`
+
 > This file is managed by agentctx. Do not remove this section.
 `;
