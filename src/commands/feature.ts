@@ -2,6 +2,7 @@ import * as p from '@clack/prompts';
 import type { Reporter } from '../ui/reporter.js';
 import type { Feature, FeatureBehavior } from '../core/features/types.js';
 import { FeatureRegistryManager } from '../core/features/registry.js';
+import { scanFeatures } from '../core/scanner/feature-scanner.js';
 
 export class FeatureCommand {
   constructor(private readonly reporter: Reporter) {}
@@ -173,6 +174,45 @@ export class FeatureCommand {
       if (feature.history.length > 0) {
         this.reporter.info(`  History: ${feature.history.length} previous version(s)`);
       }
+    }
+  }
+
+  async scan(projectRoot: string): Promise<void> {
+    this.reporter.section('Scanning project for features (static analysis)');
+
+    const results = await scanFeatures(projectRoot);
+
+    if (results.length === 0) {
+      this.reporter.info('No routes, pages, or commands detected.');
+      return;
+    }
+
+    const manager = new FeatureRegistryManager(projectRoot);
+    const registry = await manager.load();
+    const existingIds = new Set(registry.features.map((f) => f.id));
+
+    let added = 0;
+    let skipped = 0;
+
+    for (const { feature } of results) {
+      if (existingIds.has(feature.id)) {
+        skipped++;
+        continue;
+      }
+      await manager.addFeature(feature);
+      this.reporter.success(`  Added stub: "${feature.id}" (${feature.files.join(', ')})`);
+      added++;
+    }
+
+    this.reporter.blank();
+    if (added > 0) {
+      this.reporter.success(`${added} feature stub(s) added to FEATURES.md.`);
+      this.reporter.info('Run `agentctx feature update <id>` to fill in the real behavior.');
+    } else {
+      this.reporter.info('All detected features are already documented.');
+    }
+    if (skipped > 0) {
+      this.reporter.info(`${skipped} feature(s) already existed — skipped.`);
     }
   }
 

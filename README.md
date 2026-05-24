@@ -93,6 +93,7 @@ agentctx feature add           # Document a new feature (interactive)
 agentctx feature update [id]   # Update a feature — preserves previous behavior in history
 agentctx feature list          # List all documented features
 agentctx feature check <files> # Check if changed files affect documented features
+agentctx feature scan          # Static-scan source code and auto-generate stubs (no API key)
 ```
 
 **Example FEATURES.md entry:**
@@ -144,6 +145,18 @@ agentctx hook uninstall        # Remove the hook
 
 After every `git commit`, the hook writes `.agentctx/pending-review.md` with the diff. Claude Code reads `CLAUDE.md`, finds the review instructions, and automatically updates `FEATURES.md` if behavior changed.
 
+### `agentctx review [dir]`
+
+Manually close the hook loop — useful when running outside Claude Code or to replay a pending review.
+
+```bash
+agentctx review                # Process .agentctx/pending-review.md and update FEATURES.md
+agentctx review ./my-project   # Target a specific directory
+```
+
+Reads `.agentctx/pending-review.md`, finds every documented feature whose files changed, asks the AI whether the user-facing behavior changed, and updates `FEATURES.md` automatically.
+Deletes `pending-review.md` when done. Requires `ANTHROPIC_API_KEY`.
+
 
 ## Supported stacks
 
@@ -178,18 +191,23 @@ post-commit hook runs
     ↓
 .agentctx/pending-review.md written (commit message + changed files + diff)
     ↓
-Next prompt in Claude Code
-    ↓
-Claude reads CLAUDE.md → sees review instructions
-    ↓
-Analyzes diff → detects if feature behavior changed
-    ↓
-Updates FEATURES.md (with history) + DEPLOY.md if needed
-    ↓
-Deletes pending-review.md
+    ├── (Claude Code) Next prompt → reads CLAUDE.md → sees review instructions
+    │       ↓
+    │   Analyzes diff → detects if feature behavior changed
+    │       ↓
+    │   Updates FEATURES.md (with history) + DEPLOY.md if needed
+    │       ↓
+    │   Deletes pending-review.md
+    │
+    └── (any agent / CI) agentctx review
+            ↓
+        Finds affected features → calls AI per feature
+            ↓
+        Updates FEATURES.md + deletes pending-review.md
 ```
 
-No API keys required for the automatic loop — Claude Code is the AI.
+The Claude Code path requires no API key — Claude Code is the AI.
+The `agentctx review` path requires `ANTHROPIC_API_KEY`.
 
 ## Programmatic API
 

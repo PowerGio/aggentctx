@@ -10,6 +10,7 @@ import { DeployCommand } from '../commands/deploy.js';
 import { HookCommand } from '../commands/hook.js';
 import { UpdateCommand } from '../commands/update.js';
 import { StatusCommand } from '../commands/status.js';
+import { ReviewCommand } from '../commands/review.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -169,6 +170,20 @@ feature
     }
   });
 
+feature
+  .command('scan')
+  .description('Static-scan source code and auto-generate feature stubs (no API key needed)')
+  .option('-d, --dir <dir>', 'Project directory', process.cwd())
+  .action(async (opts: { dir: string }) => {
+    const reporter = new ConsoleReporter();
+    try {
+      await new FeatureCommand(reporter).scan(opts.dir);
+    } catch (e) {
+      reporter.error(e instanceof Error ? e.message : 'Unexpected error');
+      process.exit(1);
+    }
+  });
+
 // ─── deploy ──────────────────────────────────────────────────────────────────
 
 const deploy = program
@@ -288,6 +303,29 @@ program
     const reporter = new ConsoleReporter();
     try {
       await new StatusCommand(reporter).execute({ targetDir });
+    } catch (e) {
+      if (e instanceof Error) {
+        reporter.error(e.message);
+        if (e.cause instanceof Error) {
+          reporter.info(`Caused by: ${e.cause.message}`);
+        }
+      } else {
+        reporter.error('Unexpected error');
+      }
+      process.exit(1);
+    }
+  });
+
+// ─── review ──────────────────────────────────────────────────────────────────
+
+program
+  .command('review [dir]')
+  .description('Process pending-review.md — analyze diff and update FEATURES.md automatically (requires ANTHROPIC_API_KEY)')
+  .action(async (dir: string | undefined) => {
+    const targetDir = dir ?? process.cwd();
+    const reporter = new ConsoleReporter();
+    try {
+      await new ReviewCommand(reporter).execute(targetDir);
     } catch (e) {
       if (e instanceof Error) {
         reporter.error(e.message);
