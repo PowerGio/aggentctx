@@ -175,10 +175,11 @@ feature
   .command('scan')
   .description('Static-scan source code and auto-generate feature stubs (no API key needed)')
   .option('-d, --dir <dir>', 'Project directory', process.cwd())
-  .action(async (opts: { dir: string }) => {
+  .option('--dry-run', 'Preview what would be added without writing FEATURES.md', false)
+  .action(async (opts: { dir: string; dryRun: boolean }) => {
     const reporter = new ConsoleReporter();
     try {
-      await new FeatureCommand(reporter).scan(opts.dir);
+      await new FeatureCommand(reporter).scan(opts.dir, opts.dryRun);
     } catch (e) {
       reporter.error(e instanceof Error ? e.message : 'Unexpected error');
       process.exit(1);

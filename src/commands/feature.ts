@@ -177,8 +177,12 @@ export class FeatureCommand {
     }
   }
 
-  async scan(projectRoot: string): Promise<void> {
-    this.reporter.section('Scanning project for features (static analysis)');
+  async scan(projectRoot: string, dryRun = false): Promise<void> {
+    this.reporter.section(
+      dryRun
+        ? 'Scanning project for features (dry-run — nothing will be written)'
+        : 'Scanning project for features (static analysis)',
+    );
 
     const results = await scanFeatures(projectRoot);
 
@@ -197,21 +201,28 @@ export class FeatureCommand {
     for (const { feature } of results) {
       if (existingIds.has(feature.id)) {
         skipped++;
+        if (dryRun) this.reporter.info(`  already exists: "${feature.id}"`);
         continue;
       }
-      await manager.addFeature(feature);
-      this.reporter.success(`  Added stub: "${feature.id}" (${feature.files.join(', ')})`);
+      if (dryRun) {
+        this.reporter.dryRun(`  would add: "${feature.id}" (${feature.files.join(', ')})`);
+      } else {
+        await manager.addFeature(feature);
+        this.reporter.success(`  Added stub: "${feature.id}" (${feature.files.join(', ')})`);
+      }
       added++;
     }
 
     this.reporter.blank();
-    if (added > 0) {
+    if (dryRun) {
+      this.reporter.dryRun(`Would add ${added} feature stub(s). Run without --dry-run to write.`);
+    } else if (added > 0) {
       this.reporter.success(`${added} feature stub(s) added to FEATURES.md.`);
       this.reporter.info('Run `agentctx feature update <id>` to fill in the real behavior.');
     } else {
       this.reporter.info('All detected features are already documented.');
     }
-    if (skipped > 0) {
+    if (!dryRun && skipped > 0) {
       this.reporter.info(`${skipped} feature(s) already existed — skipped.`);
     }
   }

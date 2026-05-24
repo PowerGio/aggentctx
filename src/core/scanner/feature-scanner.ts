@@ -48,6 +48,23 @@ function fileToPageId(filePath: string, baseDir: string): string {
   return parts.join('-').toLowerCase().replace(/[^a-z0-9-]/g, '');
 }
 
+function fileToApiRouteId(filePath: string, baseDir: string): string {
+  const rel = filePath
+    .slice(baseDir.length)
+    .replace(/\\/g, '/')
+    .replace(/^\//, '');
+
+  // Drop the filename (route.ts) — ID comes from the directory path
+  const dir = rel.replace(/\/[^/]+$/, '');
+
+  const parts = dir
+    .split('/')
+    .filter((p) => p && !p.startsWith('(') && !p.startsWith('['));
+
+  if (parts.length === 0) return 'api-root';
+  return parts.join('-').toLowerCase().replace(/[^a-z0-9-]/g, '') || 'api-root';
+}
+
 function makeStubBehavior(id: string, source: string): FeatureBehavior {
   return {
     flow: [`[TODO] Document the user-facing flow for "${id}" (auto-detected from ${source})`],
@@ -168,7 +185,24 @@ async function scanNextPages(projectRoot: string): Promise<ScanResult[]> {
     const files = await walkDir(baseDir);
     for (const file of files) {
       const name = path.basename(file);
-      // Skip API routes and special Next.js files
+
+      // ── Next.js App Router API routes (route.ts inside app/) ──────────────
+      if (base === 'app' && (name === 'route.ts' || name === 'route.tsx' || name === 'route.js' || name === 'route.jsx')) {
+        const id = fileToApiRouteId(file, baseDir);
+        const rel = path.relative(projectRoot, file);
+        results.push({
+          feature: {
+            id,
+            files: [rel],
+            status: 'active',
+            current: makeStubBehavior(id, rel),
+            history: [],
+          },
+        });
+        continue;
+      }
+
+      // ── Page files ────────────────────────────────────────────────────────
       if (
         file.includes(path.sep + 'api' + path.sep) ||
         name.startsWith('_') ||
@@ -238,7 +272,7 @@ async function scanCliCommands(projectRoot: string): Promise<ScanResult[]> {
 // ─── Public API ──────────────────────────────────────────────────────────────
 
 export interface ScanOptions {
-  mode?: 'auto' | 'routes' | 'pages' | 'cli';
+  mode?: 'auto' | 'routes' | 'pages' | 'cli' | 'api';
 }
 
 export async function scanFeatures(projectRoot: string, opts: ScanOptions = {}): Promise<ScanResult[]> {

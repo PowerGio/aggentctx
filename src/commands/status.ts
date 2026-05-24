@@ -34,9 +34,9 @@ export class StatusCommand {
     const detector = new StackDetector(targetDir);
     const detection = await detector.detect();
 
-    const stackLabel = detection.isMonorepo
-      ? `${detection.primaryStack.name} · ${detection.packageManager} · ${detection.language}`
-      : `${detection.primaryStack.name} · ${detection.packageManager} · ${detection.language}`;
+    const pmPart   = detection.packageManager !== 'unknown' ? ` · ${detection.packageManager}` : '';
+    const langPart = detection.language       !== 'unknown' ? ` · ${detection.language}`       : '';
+    const stackLabel = `${detection.primaryStack.name}${pmPart}${langPart}`;
 
     this.reporter.info(`Stack: ${stackLabel}`);
 
