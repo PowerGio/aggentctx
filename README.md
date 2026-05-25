@@ -6,6 +6,7 @@ AI coding agents lose context between sessions. They don't know how your feature
 
 ## What it does
 
+- **`agentctx analyze`** — scans **any** project and writes `project-brief.md` (~1k–2.5k tokens) so agents never burn 150k tokens exploring from scratch
 - **`agentctx init`** — detects your stack and generates `AGENTS.md`, `CLAUDE.md`, `DESIGN.md`
 - **`agentctx update`** — re-analyzes your project and appends any sections missing from existing context files
 - **`agentctx feature add/update`** — documents feature behaviors with history, so agents know what each feature does and how it evolved
@@ -144,6 +145,30 @@ agentctx hook uninstall        # Remove the hook
 ```
 
 After every `git commit`, the hook writes `.agentctx/pending-review.md` with the diff. Claude Code reads `CLAUDE.md`, finds the review instructions, and automatically updates `FEATURES.md` if behavior changed.
+
+### `agentctx analyze [dir]`
+
+Scan **any** project and write `project-brief.md` — a token-efficient brief that agents can read instead of exploring the codebase from scratch. No prior `agentctx init` required.
+
+```bash
+agentctx analyze                    # Scan current dir, write project-brief.md
+agentctx analyze /path/to/project   # Scan a specific project
+agentctx analyze --dry-run          # Preview without writing
+agentctx analyze --no-routes        # Skip route/page detection
+```
+
+**The problem it solves:** An AI agent exploring a 160k-line codebase from scratch consumes ~150,000 tokens. `agentctx analyze` distills the same project into ~1,000–2,500 tokens by reading package.json, walking source directories, detecting integrations, and scanning routes — all without an API key.
+
+**Usage flow:**
+```bash
+# Step 1 — generate the brief once (takes ~2 seconds)
+agentctx analyze
+
+# Step 2 — tell your agent
+# "Read project-brief.md before exploring the codebase."
+```
+
+The brief includes: stack + language, directory map with file counts, key files, detected integrations (Prisma, Auth, Redis, Stripe…), API routes/pages, npm scripts, and required env vars.
 
 ### `agentctx context [dir]`
 

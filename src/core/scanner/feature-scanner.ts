@@ -8,7 +8,7 @@ export interface ScanResult {
 
 const SOURCE_EXTENSIONS = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs']);
 
-const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', 'coverage', '__pycache__', '.venv']);
+const IGNORED_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', 'coverage', '__pycache__', '.venv', '.claude']);
 
 // ─── Patterns ───────────────────────────────────────────────────────────────
 
@@ -253,6 +253,7 @@ async function scanCliCommands(projectRoot: string): Promise<ScanResult[]> {
       const cmd = match[1]!.split(' ')[0]!; // take first word (e.g. "deploy <env>" → "deploy")
       if (!cmd || cmd.length > 40) continue;
       const id = cmd.replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+      if (!/[a-z0-9]/.test(id)) continue;
       const rel = path.relative(projectRoot, file);
       results.push({
         feature: {

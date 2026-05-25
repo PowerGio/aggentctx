@@ -12,6 +12,7 @@ import { UpdateCommand } from '../commands/update.js';
 import { StatusCommand } from '../commands/status.js';
 import { ReviewCommand } from '../commands/review.js';
 import { ContextCommand } from '../commands/context.js';
+import { AnalyzeCommand } from '../commands/analyze.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -364,6 +365,33 @@ program
         noDeploy:        opts['deploy']          === false,
         noArchitecture:  opts['architecture']    === false,
         noRules:         opts['rules']           === false,
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        reporter.error(e.message);
+        if (e.cause instanceof Error) reporter.info(`Caused by: ${e.cause.message}`);
+      } else {
+        reporter.error('Unexpected error');
+      }
+      process.exit(1);
+    }
+  });
+
+// ─── analyze ─────────────────────────────────────────────────────────────────
+
+program
+  .command('analyze [dir]')
+  .description('Scan any project and write project-brief.md — a token-efficient brief for AI agents (no prior setup needed)')
+  .option('--dry-run',    'Preview to stdout without writing', false)
+  .option('--no-routes',  'Skip route/page scanning')
+  .action(async (dir: string | undefined, opts: Record<string, unknown>) => {
+    const targetDir = dir ?? process.cwd();
+    const reporter = new ConsoleReporter();
+    try {
+      await new AnalyzeCommand(reporter).execute({
+        targetDir,
+        dryRun:    opts['dryRun']  === true,
+        noRoutes:  opts['routes']  === false,
       });
     } catch (e) {
       if (e instanceof Error) {
